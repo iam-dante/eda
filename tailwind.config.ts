@@ -13,6 +13,11 @@ const config: Config = {
         foreground: "var(--foreground)",
       },
     },
+    fontFamily: {
+      //sans: ["Poppins", "sans-serif"],
+      sans: ["DM Sans", "sans-serif"],
+      jet: ["JetBrains Mono", "sans-serif"],
+    },
   },
   plugins: [],
 };
