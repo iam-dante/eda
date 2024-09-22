@@ -3,10 +3,13 @@ export default function Home() {
     <div className="flex h-screen flex-row bg-slate-800">
       <div className="w-[20%] bg-slate-300">
         <div className="flex justify-center items-center h-32">
-          <div className="h-12 bg-gray-800 w-[80%] rounded-full flex justify-center items-center">
-            <h1 className="text-xl font-medium text-white"> Upload PDF</h1>
-          </div>
+          <label htmlFor="fileUpload" className="h-12 bg-gray-800 w-[80%] rounded-full flex justify-center items-center">
+            <a>
+              <h1 className="text-xl font-medium text-white"> Upload PDF</h1>
+            </a>
+          </label>
         </div>
+        <input id="fileUpload" type="file" className="hidden"/>
       </div>
 
       <div className="w-[80%]">
