@@ -1,4 +1,47 @@
+"use client";
+import { useState } from "react";
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevState) => !prevState);
+  };
+
+  function ViewEye() {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className="size-5"
+      >
+        <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+        <path
+          fillRule="evenodd"
+          d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    );
+  }
+
+  function NotViewEye() {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className="size-5"
+      >
+        <path
+          fillRule="evenodd"
+          d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z"
+          clipRule="evenodd"
+        />
+        <path d="m10.748 13.93 2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
+      </svg>
+    );
+  }
+
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="w-[50%] h-[50%] p-6">
@@ -35,19 +78,26 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <div className="mt-2">
+              <div className="relative flex items-center">
                 <input
                   placeholder="Password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   id="password"
                   required
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6 pr-10"
                 />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showPassword ? <ViewEye /> : <NotViewEye />}
+                </button>
               </div>
             </div>
             <div className="flex justify-end">
-              <h1>Forgot Password ?</h1>
+              <h1 className="font-semibold">Forgot Password ?</h1>
             </div>
             <div>
               <button
@@ -64,7 +114,7 @@ export default function LoginPage() {
               alt="google"
               className="h-6 w-6"
             />
-            <h1>Sign in with Google</h1>
+            <h1 className="font-medium">Sign in with Google</h1>
           </button>
           <div className="flex space-x-1 justify-center py-2">
             <h1>Not registered?</h1>
