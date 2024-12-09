@@ -52,7 +52,7 @@ export default function LoginPage() {
     <div className="h-screen">
       <div className="h-[10%]  w-full flex items-center justify-end px-12">
         <Link
-          href="/"
+          href="/homepage"
           className="px-4 py-2 hover:bg-sky-200 rounded-full hover:border-sky-600 hover:border border border-white"
         >
           <h1 className="text-sky-800 font-bold text-md">
