@@ -1,15 +1,53 @@
-from flask import Flask, jsonify
+# from flask import Flask, jsonify
+
+# app = Flask(__name__)
+
+# @app.route('/', methods=["POST"])
+# def hello():
+#     return jsonify({"results": "Hellow World"})
+
+# @app.route('/post/<int:post_id>')
+# def show_post(post_id):
+#     # show the post with the given id, the id is an integer
+#     return f'Post {post_id}'
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route('/', methods=["POST"])
-def hello():
-    return jsonify({"results": "Hellow World"})
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/post/<int:post_id>')
-def show_post(post_id):
-    # show the post with the given id, the id is an integer
-    return f'Post {post_id}'
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}), 400
+
+    if len(file.read()) > MAX_FILE_SIZE:
+        return jsonify({'error': 'File is too large. Maximum size is 10MB.'}), 400
+
+    file.seek(0)  # Reset file pointer after reading size
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
+    return jsonify({'message': 'File uploaded successfully', 'filepath': filepath}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
