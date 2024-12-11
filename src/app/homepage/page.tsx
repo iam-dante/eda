@@ -9,7 +9,14 @@ const [message, setMessage] = useState("");
 
 const handleFileChange = (event) => {
   const selectedFile = event.target.files[0];
-  const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "doc/pdf"];
+  const allowedTypes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/gif",
+    'application/pdf',
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
   const maxSize = 10 * 1024 * 1024; // 5MB
 
   if (selectedFile) {
