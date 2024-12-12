@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify 
 from flask_cors import CORS 
 import os
+from chromadb_server import chroma_vector, ask_claude, ask_ollama
 
 app = Flask(__name__)
 CORS(app)
@@ -41,11 +42,18 @@ def upload_file():
 @app.route("/search", methods=["POST"])
 def search():
 
+    collection = chroma_vector()
     data = request.get_json()
-    text = data["text"]
+    user_input = data["text"]
 
-    result = text.upper()
-    return jsonify({"results":result}), 200
+    results = collection.query(
+        query_texts=[user_input], 
+        n_results=2
+    )
+
+    claude_results = ask_ollama(user_input, results )
+
+    return jsonify({"results":claude_results}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

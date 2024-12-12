@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState,} from "react";
 import axios from "axios";
 
 export default function HomePage() {
@@ -14,6 +14,8 @@ export default function HomePage() {
     }
   };
 
+  let chatinput = inputText
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
     setInputText("")
@@ -138,16 +140,7 @@ export default function HomePage() {
             <div className="flex items-center justify-end ">
               <div className="max-w-[70%] bg-gray-100 p-2 rounded-md">
                 <h1 className="text-black">
-                  Lorem Ipsum is simply dummy text of the printing and
-                  typesetting industry. Lorem Ipsum has been the industrys
-                  standard dummy text ever since the 1500s, when an unknown
-                  printer took a galley of type and scrambled it to make a type
-                  specimen book. It has survived not only five centuries, but
-                  also the leap into electronic typesetting, remaining
-                  essentially unchanged. It was popularised in the 1960s with
-                  the release of Letraset sheets containing Lorem Ipsum
-                  passages, and more recently with desktop publishing software
-                  like Aldus PageMaker including versions of Lorem Ipsum.
+                 {chatinput}
                 </h1>
               </div>
             </div>

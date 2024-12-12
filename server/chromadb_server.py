@@ -4,6 +4,11 @@ import fitz
 import spacy
 import re
 from chromadb.utils import embedding_functions
+import anthropic
+from dotenv import load_dotenv
+import json
+import requests
+
 
 nlp = spacy.load("en_core_web_sm")  
 
@@ -24,7 +29,7 @@ def extract_text_from_pdf(file_path):
                 })
     return pages_text
 
-def process_text(pages_text, slice_size=12):
+def process_text(pages_text, slice_size=6):
     long_chunks = []
     long_chunks_metadata = []
 
@@ -63,21 +68,16 @@ def process_text(pages_text, slice_size=12):
     # Return Long chunks, metadata (pages number) and idx for long chunk (used in chromadb)
     return long_chunks, long_chunks_metadata
 
-
-
 def list_pdf_files():
     """
     List PDF files in the current directory
     
     :return: List of PDF filenames
     """
-    pdf_files = [f for f in os.listdir('./uploads') if f.lower().endswith('.pdf')]
+    pdf_files = [f for f in os.listdir('../uploads') if f.lower().endswith('.pdf')]
     return pdf_files
 
 
-file_path = list_pdf_files()[0]
-
-print(file_path)
 
 def chroma_vector():
     """
@@ -96,9 +96,14 @@ def chroma_vector():
     #     print(f"Error: File not found at {file_path}")
     #     return None
     
+    # file_path = list_pdf_files()[0]
+    # need to change this to be online database
+    # and not take something on the file path
+    file_path = "./uploads/BrianTemuResume_.pdf"
 
     # Extract text from PDF (you'll need to implement or import this function)
-    page_text = extract_text_from_pdf(f'./uploads/{file_path}')
+    # page_text = extract_text_from_pdf(f'../uploads/{file_path}')
+    page_text = extract_text_from_pdf(file_path)
     
     # Process text into chunks (you'll need to implement or import this function)
     long_chunks, long_chunks_metadata = process_text(page_text)
@@ -125,16 +130,91 @@ def chroma_vector():
     
     print(f"Successfully created vector collection with {len(long_chunks)} chunks")
     return collection
+
+def ask_ollama(query, context):
+     
+    base_prompt = f"""
+            Based on the following context, provide a clear and detailed answer to the user's query. Extract only relevant passages from the context to ensure accuracy. Focus on explanatory and structured answers, similar to the example responses below.
+
+            Context:
+            {context}
+
+            **User Query**: {query}
+
+            **Answer**:\n
+
+            Please return only answer of this question
+
+            """
+     
+    url = "http://localhost:11434/api/generate"
+
+    headers ={
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "model":"llama3.1",
+        "prompt": base_prompt,
+        "stream": False,
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+
+    if response.status_code==200:
+        response_message = response.text
+        data=json.loads(response_message)
+        print(data)
+
+        return data['response']
+
+    else:
+        print("Something went wrong")
+        return ""
+
+
+def ask_claude(query, context):
+
+    # context = "- " + "\n- ".join(context[0])
+    base_prompt = f"""
+                Based on the following context, provide a clear and detailed answer to the user's query. Extract only relevant passages from the context to ensure accuracy. Focus on explanatory and structured answers, similar to the example responses below.
+
+                Context:
+                {context}
+
+                **User Query**: {query}
+
+                **Answer**:\n
+
+                Please return only answer of this question
+
+                """
     
-    # except Exception as e:
-    #     print(f"An error occurred while processing the file: {e}")
-    #     return None
 
-collection = chroma_vector()
-print(collection)
-results = collection.query(
-    query_texts=["What is brian name"], 
-    n_results=2
-)
+    
+    # Load environment variables from the .env file
+    load_dotenv() 
 
-print(results)
+    # Access the variables
+    an_api_key = os.getenv("ANTHROPIC_API_KEY")
+
+    client = anthropic.Anthropic(api_key=an_api_key)
+
+    message = client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        max_tokens=1000,
+        temperature=0.7,
+        system="Use the context provided to answer the following query",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": base_prompt
+                    }
+                ]
+            }
+        ]
+    )
+    return message.content[0].text
