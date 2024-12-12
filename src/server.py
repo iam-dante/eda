@@ -24,7 +24,11 @@ CORS(app)
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# making a dir in the server 
+# This will need to be a cloud server and having a database that maps the users 
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) 
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
