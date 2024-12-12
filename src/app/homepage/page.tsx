@@ -2,72 +2,106 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-
 export default function HomePage() {
-const [file, setFile] = useState(null);
-const [message, setMessage] = useState("");
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState("");
+  const [inputText, setInputText] = useState("");
+  const [response, setResponseText] = useState("")
 
-const handleFileChange = (event) => {
-  const selectedFile = event.target.files[0];
-  const allowedTypes = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "image/gif",
-    'application/pdf',
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
-  const maxSize = 10 * 1024 * 1024; // 10MB
-
-  if (selectedFile) {
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setMessage("Only PNG, JPEG, JPG, and GIF files are allowed.");
-      return;
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      handleSubmit(event);
     }
+  };
 
-    if (selectedFile.size > maxSize) {
-      setMessage("File is too large. Maximum size is 5MB.");
-      return;
-    }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setInputText("")
 
-    setMessage("");
-    setFile(selectedFile);
-  }
-};
-
-const handleUpload = async () => {
-  if (!file) {
-    setMessage("Please select a file first.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const response = await axios.post(
-      "http://127.0.0.1:5000/upload",
-      formData,
-      {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/search", {
+        method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
-      }
-    );
-    setMessage(response.data.message);
-  } catch (error) {
-    setMessage(error.response?.data?.error || "Failed to upload file.");
-  }
-};
+        body: JSON.stringify({ text: inputText }),
+      });
 
-// return (
-//   <div>
-//     <h1>File Upload</h1>
-//     <input type="file" onChange={handleFileChange} />
-//     <button onClick={handleUpload}>Upload</button>
-//     {message && <p>{message}</p>}
-//   </div>
-// );
+      if (response.ok) {
+        const data = await response.json();
+        setResponseText(data.results);
+      } else {
+        const errorData = await response.json();
+        alert(
+          errorData.error || "An error occurred while processing your text."
+        );
+      }
+    } catch (error) {
+      alert("Failed to connect to the server.");
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/gif",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (selectedFile) {
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setMessage("Only PNG, JPEG, JPG, and GIF files are allowed.");
+        return;
+      }
+
+      if (selectedFile.size > maxSize) {
+        setMessage("File is too large. Maximum size is 5MB.");
+        return;
+      }
+
+      setMessage("");
+      setFile(selectedFile);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      setMessage("Please select a file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setMessage(response.data.message);
+    } catch (error) {
+      setMessage(error.response?.data?.error || "Failed to upload file.");
+    }
+  };
+
+  // return (
+  //   <div>
+  //     <h1>File Upload</h1>
+  //     <input type="file" onChange={handleFileChange} />
+  //     <button onClick={handleUpload}>Upload</button>
+  //     {message && <p>{message}</p>}
+  //   </div>
+  // );
 
   return (
     <div className="flex h-screen flex-row bg-slate-800">
@@ -122,7 +156,7 @@ const handleUpload = async () => {
             <div className="flex items-center ">
               <div className="max-w-[70%] p-2 rounded-md text-white flex flex-row space-x-2">
                 <h1> &#x2022; </h1>
-                <h1 className="text-white">AI response</h1>
+                <h1 className="text-white">{response}</h1>
               </div>
             </div>
           </div>
@@ -132,11 +166,17 @@ const handleUpload = async () => {
         <div className="w-full h-[8%] flex justify-center items-center">
           <div className="h-14 w-[60%] bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
             <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
               className=" w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0"
               placeholder="Ask document a question."
-              type="text"
+              onKeyDown={handleKeyPress}
             />
-            <div className="bg-black h-10 w-10 rounded-full flex justify-center items-center">
+            <button
+              className="bg-black h-10 w-10 rounded-full flex justify-center items-center"
+              onClick={handleSubmit}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -151,7 +191,7 @@ const handleUpload = async () => {
                   d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
                 />
               </svg>
-            </div>
+            </button>
           </div>
         </div>
       </div>
