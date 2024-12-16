@@ -1,15 +1,14 @@
 from flask import Flask, request, jsonify 
 from flask_cors import CORS 
 import os
-from chromadb_server import chroma_vector, ask_claude, ask_ollama
+from chromadb_server import chroma_vector, ask_ollama
 
 app = Flask(__name__)
 CORS(app)
 
-
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 # making a dir in the server 
 # This will need to be a cloud server and having a database that maps the users 
@@ -52,7 +51,6 @@ def search():
     )
 
     claude_results = ask_ollama(user_input, results )
-
     return jsonify({"results":claude_results}), 200
 
 if __name__ == '__main__':

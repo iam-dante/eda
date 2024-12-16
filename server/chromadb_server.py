@@ -134,16 +134,14 @@ def chroma_vector():
 def ask_ollama(query, context):
      
     base_prompt = f"""
-            Based on the following context, provide a clear and detailed answer to the user's query. Extract only relevant passages from the context to ensure accuracy. Focus on explanatory and structured answers, similar to the example responses below.
+            By using the context try to answer the query of the user
 
             Context:
             {context}
 
             **User Query**: {query}
 
-            **Answer**:\n
-
-            Please return only answer of this question
+           
 
             """
      
@@ -173,48 +171,48 @@ def ask_ollama(query, context):
         return ""
 
 
-def ask_claude(query, context):
+# def ask_claude(query, context):
 
-    # context = "- " + "\n- ".join(context[0])
-    base_prompt = f"""
-                Based on the following context, provide a clear and detailed answer to the user's query. Extract only relevant passages from the context to ensure accuracy. Focus on explanatory and structured answers, similar to the example responses below.
+#     # context = "- " + "\n- ".join(context[0])
+#     base_prompt = f"""
+#                 Based on the following context, provide a clear and detailed answer to the user's query. Extract only relevant passages from the context to ensure accuracy. Focus on explanatory and structured answers, similar to the example responses below.
 
-                Context:
-                {context}
+#                 Context:
+#                 {context}
 
-                **User Query**: {query}
+#                 **User Query**: {query}
 
-                **Answer**:\n
+#                 **Answer**:\n
 
-                Please return only answer of this question
+#                 Please return only answer of this question
 
-                """
+#                 """
     
 
     
-    # Load environment variables from the .env file
-    load_dotenv() 
+#     # Load environment variables from the .env file
+#     load_dotenv() 
 
-    # Access the variables
-    an_api_key = os.getenv("ANTHROPIC_API_KEY")
+#     # Access the variables
+#     an_api_key = os.getenv("ANTHROPIC_API_KEY")
 
-    client = anthropic.Anthropic(api_key=an_api_key)
+#     client = anthropic.Anthropic(api_key=an_api_key)
 
-    message = client.messages.create(
-        model="claude-3-5-sonnet-20240620",
-        max_tokens=1000,
-        temperature=0.7,
-        system="Use the context provided to answer the following query",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": base_prompt
-                    }
-                ]
-            }
-        ]
-    )
-    return message.content[0].text
+#     message = client.messages.create(
+#         model="claude-3-5-sonnet-20240620",
+#         max_tokens=1000,
+#         temperature=0.7,
+#         system="Use the context provided to answer the following query",
+#         messages=[
+#             {
+#                 "role": "user",
+#                 "content": [
+#                     {
+#                         "type": "text",
+#                         "text": base_prompt
+#                     }
+#                 ]
+#             }
+#         ]
+#     )
+#     return message.content[0].text
