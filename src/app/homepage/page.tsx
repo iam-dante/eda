@@ -194,13 +194,4 @@ export default function HomePage() {
   );
 }
 
-// export async function getServerSideProps() {
-//   const response = await fetch("/api/hellow");
-//   const data = await response.json();
 
-//   return {
-//     props: {
-//       data,
-//     },
-//   };
-// }

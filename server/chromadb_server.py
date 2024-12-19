@@ -140,9 +140,6 @@ def ask_ollama(query, context):
             {context}
 
             **User Query**: {query}
-
-           
-
             """
      
     url = "http://localhost:11434/api/generate"
@@ -152,7 +149,7 @@ def ask_ollama(query, context):
     }
 
     data = {
-        "model":"llama3.1",
+        "model":"llama3.2",
         "prompt": base_prompt,
         "stream": False,
     }
@@ -160,15 +157,19 @@ def ask_ollama(query, context):
     response = requests.post(url, headers=headers, data=json.dumps(data))
 
     if response.status_code==200:
+        # take the response and return only the answer
         response_message = response.text
         data=json.loads(response_message)
-        print(data)
-
         return data['response']
-
+    elif response.status_code==500:
+        return "Internal Server Error"
+    
+    elif response.status_code==400:
+        return "Bad Request"
+    elif response.status_code==404:
+        return "Not Found"
     else:
-        print("Something went wrong")
-        return ""
+        return "Unknown Error"
 
 
 # def ask_claude(query, context):
