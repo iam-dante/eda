@@ -1,12 +1,21 @@
 "use client";
-import { useState,} from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
+interface ChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
 
 export default function HomePage() {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
   const [inputText, setInputText] = useState("");
-  const [response, setResponseText] = useState("")
+  // const [response, setResponseText] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
@@ -14,11 +23,9 @@ export default function HomePage() {
     }
   };
 
-  let chatinput = inputText
-  
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setInputText("")
+    setInputText("");
 
     try {
       const response = await fetch("http://127.0.0.1:5000/search", {
@@ -30,8 +37,8 @@ export default function HomePage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setResponseText(data.results);
+        // const data = await response.json();
+        // setResponseText(data.results);
       } else {
         const errorData = await response.json();
         alert(
@@ -95,30 +102,28 @@ export default function HomePage() {
       setMessage(error.response?.data?.error || "Failed to upload file.");
     }
   };
+  useEffect(() => {
+    fetchChatHistory();
+  }, []);
 
-  // return (
-  //   <div>
-  //     <h1>File Upload</h1>
-  //     <input type="file" onChange={handleFileChange} />
-  //     <button onClick={handleUpload}>Upload</button>
-  //     {message && <p>{message}</p>}
-  //   </div>
-  // );
+  const fetchChatHistory = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:5000//chat-history");
+      const data = await response.json();
+      setChatHistory(data.history);
+    } catch (err) {
+      setError("Failed to load chat history");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen flex-row bg-slate-800">
       <div className="w-[20%] bg-slate-300">
         <div className="flex flex-col justify-center items-center h-32">
-          {/* <input
-          type="file"
-            // htmlFor="fileUpload"
-            className="h-12 bg-gray-800 w-[80%] rounded-full flex justify-center items-center"
-          >
-            <a>
-              <h1 className="text-xl font-medium text-white"> Upload PDF</h1>
-            </a>
-          </input> */}
-
           <input type="file" onChange={handleFileChange} />
           <button onClick={handleUpload}>Upload</button>
           {message && <p>{message}</p>}
@@ -134,24 +139,37 @@ export default function HomePage() {
         </div>
 
         {/* Chat Interface */}
-        <div className="w-full h-[82%]  flex justify-center pt-4">
-          <div className="w-[70%] h-full ">
-            {/* Query Text */}
-            <div className="flex items-center justify-end ">
-              <div className="max-w-[70%] bg-gray-100 p-2 rounded-md">
-                <h1 className="text-black">
-                 {chatinput}
-                </h1>
-              </div>
-            </div>
-
-            {/* Response  Text */}
-            <div className="flex items-center ">
-              <div className="max-w-[70%] p-2 rounded-md text-white flex flex-row space-x-2">
-                <h1> &#x2022; </h1>
-                <h1 className="text-white">{response}</h1>
-              </div>
-            </div>
+        <div className="w-full h-[82%] flex justify-center pt-4">
+          <div className="w-[70%] h-full overflow-y-auto">
+            {isLoading ? (
+              <div className="text-white">Loading chat history...</div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : (
+              chatHistory?.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex items-center ${
+                    message.role === "user" ? "justify-end" : ""
+                  }`}
+                >
+                  <div
+                    className={`max-w-[70%] p-2 rounded-md ${
+                      message.role === "user" ? "bg-gray-100" : ""
+                    }`}
+                  >
+                    <h1
+                      className={
+                        message.role === "user" ? "text-black" : "text-white"
+                      }
+                    >
+                      {message.role === "assistant" && <span>&#x2022; </span>}
+                      {message.content}
+                    </h1>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -193,5 +211,3 @@ export default function HomePage() {
     // <h1 className="text-black bg-red-300">{data}</h1>
   );
 }
-
-
