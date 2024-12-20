@@ -126,6 +126,7 @@ def search():
 
     except Exception as e:
         db.session.rollback()
+        # sends a 500 error
         return jsonify({"error": str(e)}), 500
     
 @app.route('/chat-history', methods=['GET'])
