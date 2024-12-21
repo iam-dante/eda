@@ -12,7 +12,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db' # Change it into online version
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -73,8 +73,6 @@ def upload_file():
 
 @app.route("/search", methods=["POST"])
 def search():
-    
-
     # collection = chroma_vector()
     # data = request.get_json()
     # user_input = data["text"]
