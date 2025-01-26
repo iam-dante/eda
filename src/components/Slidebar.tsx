@@ -39,12 +39,12 @@ export default function Sidebar() {
         } z-40`}
       >
         <div className="flex flex-col items-center justify-between mb-4 h-full ">
-          <div className="flex-1 overflow-auto">
+          <div className="flex flex-col overflow-auto space-y-2 w-full pt-6">
             {chats.map((chat) => (
               <button
                 key={chat.id}
-                // variant="ghost"
-                className="w-full justify-start mb-2"
+                
+                className="w-full p-2 text-left bg-black rounded-md text-white"
                 onClick={() => router.push(`/chat/${chat.id}`)}
               >
                 {chat.name}
