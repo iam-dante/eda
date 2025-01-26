@@ -9,13 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-toast": "^1.2.5",
     "axios": "^1.7.7",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "filepond": "^4.32.5",
+    "lucide": "^0.474.0",
+    "lucide-react": "^0.474.0",
     "next": "^14.2.20",
     "next-auth": "^4.24.11",
     "react": "^18",
     "react-dom": "^18",
-    "react-filepond": "^7.1.2"
+    "react-filepond": "^7.1.2",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@types/node": "^20",

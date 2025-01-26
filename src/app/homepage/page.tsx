@@ -122,23 +122,23 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen flex-row bg-slate-800">
-      <div className="w-[20%] bg-slate-300">
+      {/* <div className="w-[20%] bg-slate-300">
         <div className="flex flex-col justify-center items-center h-32">
           <input type="file" onChange={handleFileChange} />
           <button onClick={handleUpload}>Upload</button>
           {message && <p>{message}</p>}
         </div>
         <input id="fileUpload" type="file" className="hidden" />
-      </div>
+      </div> */}
 
-      <div className="w-[80%]">
+      {/* <div className="md:ml-64 w-full">
         <div className="h-[10%] w-full  flex items-center px-12 border-b-2 border-white">
           <h1 className="text-white font-sans text-2xl font-semibold">
             ChatRAG
           </h1>
         </div>
 
-        {/* Chat Interface */}
+       
         <div className="w-full h-[82%] flex justify-center pt-4">
           <div className="w-[70%] h-full overflow-y-auto">
             {isLoading ? (
@@ -173,7 +173,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Input  */}
+        
         <div className="w-full h-[8%] flex justify-center items-center">
           <div className="h-14 w-[60%] bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
             <input
@@ -205,7 +205,7 @@ export default function HomePage() {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
 
     // <h1 className="text-black bg-red-300">{data}</h1>
