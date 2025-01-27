@@ -5,25 +5,10 @@ import { Send, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 // import { useToast } from "@/components/ui/use-toast";
 // import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import ReactMarkdown from "react-markdown";
+
 
 import { Toaster } from "@/components/ui/toaster";
-
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import MarkdownRenderer from "./MarkdownRenderer";
-
-// Add custom markdown styles
-const markdownStyles = {
-  p: { fontSize: "14px", lineHeight: "1.6", color: "#374151" },
-  code: { backgroundColor: "#f3f4f6", padding: "2px 4px", borderRadius: "4px" },
-  pre: { margin: "8px 0" },
-  h1: { fontSize: "18px", fontWeight: "bold", margin: "16px 0 8px" },
-  h2: { fontSize: "16px", fontWeight: "bold", margin: "14px 0 8px" },
-  ul: { paddingLeft: "16px", margin: "8px 0" },
-  li: { fontSize: "14px", margin: "4px 0" },
-};
 
 interface Message {
   id: string;
@@ -39,41 +24,8 @@ export default function Chat({ chatId }: { chatId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  //  const handleSubmit = async (event) => {
-  //    event.preventDefault();
-  //    setInputText("");
-
-  //    try {
-  //      const response = await fetch("http://127.0.0.1:5000/search", {
-  //        method: "POST",
-  //        headers: {
-  //          "Content-Type": "application/json",
-  //        },
-  //        body: JSON.stringify({ text: inputText }),
-  //      });
-
-  //      if (response.ok) {
-  //        // const data = await response.json();
-  //        // setResponseText(data.results);
-  //      } else {
-  //        const errorData = await response.json();
-  //        alert(
-  //          errorData.error || "An error occurred while processing your text."
-  //        );
-  //      }
-  //    } catch (error) {
-  //      alert("Failed to connect to the server.");
-  //    }
-  //  };
 
   const sendMessage = async (e: React.FormEvent) => {
-    // toast({ description: "Sending message..." });
-    // // toast({
-    //   variant: "destructive",
-    //   title: "Uh oh! Something went wrong.",
-    //   description: "There was a problem with your request.",
-    //   action: <ToastAction altText="Try again">Try again</ToastAction>,
-    // });
 
     e.preventDefault();
     if (input.trim() || attachment) {
@@ -162,12 +114,6 @@ export default function Chat({ chatId }: { chatId: string }) {
             >
               {message.sender === "ai" && <span>&#x2022; </span>}
               <MarkdownRenderer content={message.content} />
-              {/* <MarkdownRenderer content=""/> */}
-              {/* <Markdown remarkPlugins={[remarkGfm]}>
-                  {message.content}
-                </Markdown> */}
-              {/* {message.content} */}
-              {/* {message.content} */}
               {message.attachment && (
                 <div className="mt-2">
                   <a
