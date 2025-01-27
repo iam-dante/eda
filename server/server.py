@@ -3,7 +3,9 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
-from chromadb_server import chroma_vector, ask_ollama
+from chromadb_server import chroma_vector
+import json
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -71,6 +73,47 @@ def upload_file():
     return jsonify({'message': 'File uploaded successfully', 'filepath': filepath}), 200
 
 
+def ask_ollama(query):
+     
+    # base_prompt = f"""
+    #         By using the context try to answer the query of the user
+
+    #         Context:
+    #         {context}
+
+    #         **User Query**: {query}
+    #         """
+     
+    url = "http://localhost:11434/api/generate"
+
+    headers ={
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "model":"llama3.2",
+        "prompt": query,
+        "stream": False,
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+
+    if response.status_code==200:
+        # take the response and return only the answer
+        response_message = response.text
+        data=json.loads(response_message)
+        return data['response']
+    elif response.status_code==500:
+        return "Internal Server Error"
+    
+    elif response.status_code==400:
+        return "Bad Request"
+    elif response.status_code==404:
+        return "Not Found"
+    else:
+        return "Unknown Error"
+
+
 @app.route("/search", methods=["POST"])
 def search():
     # collection = chroma_vector()
@@ -102,28 +145,28 @@ def search():
         if not user_input:
             return jsonify({"error": "Missing user input"}), 400
 
-        # Save user message
-        user_message = ChatMessage(role='user', content=user_input)
-        db.session.add(user_message)
-        db.session.commit()
+        # # Save user message
+        # user_message = ChatMessage(role='user', content=user_input)
+        # db.session.add(user_message)
+        # db.session.commit()
 
-        # Get response from Ollama
-        collection = chroma_vector()
-        results = collection.query(query_texts=[user_input], n_results=2)
-        claude_results = ask_ollama(user_input, results)
+        # # Get response from Ollama
+        # collection = chroma_vector()
+        # results = collection.query(query_texts=[user_input], n_results=2)
+        claude_results = ask_ollama(user_input)
 
-        # Save assistant message
-        assistant_message = ChatMessage(role='assistant', content=claude_results)
-        db.session.add(assistant_message)
-        db.session.commit()
+        # # Save assistant message
+        # assistant_message = ChatMessage(role='assistant', content=claude_results)
+        # db.session.add(assistant_message)
+        # db.session.commit()
 
         return jsonify({
             "results": claude_results,
-            "message_id": assistant_message.id
+            # "message_id": assistant_message.id
         }), 200
 
     except Exception as e:
-        db.session.rollback()
+        # db.session.rollback()
         # sends a 500 error
         return jsonify({"error": str(e)}), 500
     

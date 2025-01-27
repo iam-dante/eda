@@ -102,6 +102,8 @@ export default function HomePage() {
       setMessage(error.response?.data?.error || "Failed to upload file.");
     }
   };
+
+  
   useEffect(() => {
     fetchChatHistory();
   }, []);
@@ -109,7 +111,7 @@ export default function HomePage() {
   const fetchChatHistory = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000//chat-history");
+      const response = await fetch("http://127.0.0.1:5000/chat-history");
       const data = await response.json();
       setChatHistory(data.history);
     } catch (err) {

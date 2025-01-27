@@ -16,7 +16,7 @@ export default function Home() {
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-4">Welcome to RAG Chat App</h1>
         <p className="mb-4 text-gray-600">
-          Select an existing chat or start a new one to begin messaging.
+          Select an existing chat or start a new one to begin quering.
         </p>
         <Link href="/chat/new">
           <button className="bg-black text-white px-6 py-2 rounded-md">Start Chatting</button>

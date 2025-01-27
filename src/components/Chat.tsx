@@ -1,12 +1,29 @@
 "use client";
-
 import { useState, useRef } from "react";
-// import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Paperclip } from "lucide-react";
-// import { useToast } from "@/components/ui/use-toast";
 import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/components/ui/use-toast";
+// import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import ReactMarkdown from "react-markdown";
 
+import { Toaster } from "@/components/ui/toaster";
+
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import MarkdownRenderer from "./MarkdownRenderer";
+
+// Add custom markdown styles
+const markdownStyles = {
+  p: { fontSize: "14px", lineHeight: "1.6", color: "#374151" },
+  code: { backgroundColor: "#f3f4f6", padding: "2px 4px", borderRadius: "4px" },
+  pre: { margin: "8px 0" },
+  h1: { fontSize: "18px", fontWeight: "bold", margin: "16px 0 8px" },
+  h2: { fontSize: "16px", fontWeight: "bold", margin: "14px 0 8px" },
+  ul: { paddingLeft: "16px", margin: "8px 0" },
+  li: { fontSize: "14px", margin: "4px 0" },
+};
 
 interface Message {
   id: string;
@@ -22,7 +39,42 @@ export default function Chat({ chatId }: { chatId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const sendMessage = (e: React.FormEvent) => {
+  //  const handleSubmit = async (event) => {
+  //    event.preventDefault();
+  //    setInputText("");
+
+  //    try {
+  //      const response = await fetch("http://127.0.0.1:5000/search", {
+  //        method: "POST",
+  //        headers: {
+  //          "Content-Type": "application/json",
+  //        },
+  //        body: JSON.stringify({ text: inputText }),
+  //      });
+
+  //      if (response.ok) {
+  //        // const data = await response.json();
+  //        // setResponseText(data.results);
+  //      } else {
+  //        const errorData = await response.json();
+  //        alert(
+  //          errorData.error || "An error occurred while processing your text."
+  //        );
+  //      }
+  //    } catch (error) {
+  //      alert("Failed to connect to the server.");
+  //    }
+  //  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    // toast({ description: "Sending message..." });
+    // // toast({
+    //   variant: "destructive",
+    //   title: "Uh oh! Something went wrong.",
+    //   description: "There was a problem with your request.",
+    //   action: <ToastAction altText="Try again">Try again</ToastAction>,
+    // });
+
     e.preventDefault();
     if (input.trim() || attachment) {
       const newMessage: Message = {
@@ -36,16 +88,43 @@ export default function Chat({ chatId }: { chatId: string }) {
       setAttachment(null);
       // Here you would typically send the message to your backend or AI service
       // For this example, we'll just echo the message back as the AI
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          content: attachment
-            ? `I received your attachment: ${attachment.name}`
-            : `Echo: ${input.trim()}`,
-          sender: "ai",
-        };
-        setMessages((prevMessages) => [...prevMessages, aiResponse]);
-      }, 1000);
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: input }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // setResponseText(data.results);
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: attachment
+              ? `I received your attachment: ${attachment.name}`
+              : `${data["results"]}`,
+            sender: "ai",
+          };
+          setMessages((prevMessages) => [...prevMessages, aiResponse]);
+        } else {
+          const errorData = await response.json();
+          toast({
+            description:
+              errorData.error ||
+              "An error occurred while processing your text.",
+          });
+          // alert(
+          //   errorData.error || "An error occurred while processing your text."
+          // );
+        }
+      } catch (error) {
+        toast({
+          description: "Failed to connect to the server.",
+        });
+      }
     }
   };
 
@@ -70,61 +149,96 @@ export default function Chat({ chatId }: { chatId: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full p-4 md:ml-64">
-      <div className="flex-1 overflow-auto mb-4">
+    <div className="flex flex-col items-center h-screen px-[12%] bg-white md:ml-64 py-6 overflow-y-auto ">
+      <div className=" mb-6 space-y-2 flex flex-col h-full bg-yellow-200 p-4 w-full my-4 overflow-y-auto">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`mb-2 p-2 rounded-lg ${
-              message.sender === "user" ? "bg-blue-100 ml-auto" : "bg-gray-100"
-            } max-w-[70%]`}
-          >
-            {message.content}
-            {message.attachment && (
-              <div className="mt-2">
-                <a
-                  href={message.attachment}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline"
-                >
-                  View Attachment
-                </a>
-              </div>
-            )}
+          <div key={message.id} className="grid justify-items-stretch ">
+            <div
+              className={`max-w-[70%] px-2 py-2 rounded-l-md rounded-tr-md font-sans font-medium ${
+                message.sender === "user"
+                  ? "bg-gray-200 justify-self-end"
+                  : "max-w-[90%] text-[17px] space-y-2"
+              }`}
+            >
+              {message.sender === "ai" && <span>&#x2022; </span>}
+              <MarkdownRenderer content={message.content} />
+              {/* <MarkdownRenderer content=""/> */}
+              {/* <Markdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </Markdown> */}
+              {/* {message.content} */}
+              {/* {message.content} */}
+              {message.attachment && (
+                <div className="mt-2">
+                  <a
+                    href={message.attachment}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline"
+                  >
+                    View Attachment
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
-      
-      <form onSubmit={sendMessage} className="flex items-center">
-        <Input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileChange}
-          accept=".txt,.pdf,.doc,.docx"
-        />
-        <button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => fileInputRef.current?.click()}
-          className="mr-2"
-        >
-          <Paperclip className="h-4 w-4" />
-        </button>
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={
-            attachment ? `${attachment.name} attached` : "Type your message..."
-          }
-          className="flex-1 mr-2"
-        />
-        <button type="submit">
-          <Send className="h-4 w-4" />
-        </button>
-      </form>
+
+      <div className="sticky bottom-0 pb-6 pt-2 bg-white w-full">
+        <form onSubmit={sendMessage} className="flex items-end w-full">
+          <div className="w-full flex justify-center items-center">
+            <div className="h-14 w-full bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
+              <Input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleFileChange}
+                accept=".txt,.pdf,.doc,.docx"
+              />
+              <Input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={
+                  attachment
+                    ? `${attachment.name} attached`
+                    : "Type your message..."
+                }
+                className=" w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mr-2"
+              >
+                <Paperclip className="h-6 w-6 -rotate-45 " />
+              </button>
+              <button
+                type="submit"
+                className="bg-black h-8 w-8 rounded-full flex justify-center items-center"
+                // onClick={handleSubmit}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 22 22"
+                  strokeWidth={3}
+                  stroke="currentColor"
+                  className="size-4 text-white"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <Toaster />
     </div>
   );
 }

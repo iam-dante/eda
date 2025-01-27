@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Slidebar from "../components/Slidebar";
-import localFont from "next/font/local";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 
@@ -16,12 +16,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={""}
-      >
-        <div className="flex h-screen">
+      <body className={""}>
+        <div className="flex h-screen bg-white">
           <Slidebar />
-          <main className="flex-1 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-auto">{children}
+
+          <Toaster />
+          </main>
         </div>
       </body>
     </html>
