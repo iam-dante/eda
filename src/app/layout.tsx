@@ -5,7 +5,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "Rag Web",
+  title: "RAG Chat App",
   description: "Chat with a PDFs",
 };
 

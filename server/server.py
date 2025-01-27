@@ -91,9 +91,10 @@ def ask_ollama(query):
     }
 
     data = {
-        "model":"llama3.2",
+        "model":"deepseek-r1:8b",
         "prompt": query,
         "stream": False,
+        "stop": ["<think></think>"]
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
