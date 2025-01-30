@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
-from chromadb_server import chroma_vector
+from chromadb_server import chroma_vector 
 import json
 import requests
 
@@ -14,6 +14,8 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
+
+#TODO : Add the database to the server
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
