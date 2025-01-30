@@ -15,38 +15,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', "pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
-#TODO : Add the database to the server
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db' 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-
-# Chat Message Model
-class ChatMessage(db.Model):
-    __tablename__ = 'chat_message'
-    id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(20), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'role': self.role,
-            'content': self.content,
-            'timestamp': self.timestamp.isoformat()
-        }
-
-def init_db():
-    with app.app_context():
-        try:
-            db.create_all()
-            print("Database initialized successfully")
-        except Exception as e:
-            print(f"Error initializing database: {e}")
-
-# Initialize database tables
-init_db()
-
 # making a dir in the server 
 # This will need to be a cloud server and having a database that maps the users 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) 
@@ -173,15 +141,6 @@ def search():
         # sends a 500 error
         return jsonify({"error": str(e)}), 500
     
-@app.route('/chat-history', methods=['GET'])
-def get_chat_history():
-    try:
-        messages = ChatMessage.query.order_by(ChatMessage.timestamp).all()
-        return jsonify({
-            "history": [message.to_dict() for message in messages]
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
