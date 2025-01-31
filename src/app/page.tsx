@@ -1,5 +1,5 @@
-import LoginPage from "./loginpage";
-import HomePage from "./homepage/page";
+// import LoginPage from "./loginpage";
+// import HomePage from "./homepage/page";
 import Link from "next/link";
 
 

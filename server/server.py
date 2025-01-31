@@ -64,7 +64,7 @@ def ask_ollama(query):
         "model":"deepseek-r1:8b",
         "prompt": query,
         "stream": False,
-        "stop": ["<think></think>"]
+        "stop": ["<think> </think>"]
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -126,10 +126,6 @@ def search():
         # results = collection.query(query_texts=[user_input], n_results=2)
         claude_results = ask_ollama(user_input)
 
-        # # Save assistant message
-        # assistant_message = ChatMessage(role='assistant', content=claude_results)
-        # db.session.add(assistant_message)
-        # db.session.commit()
 
         return jsonify({
             "results": claude_results,

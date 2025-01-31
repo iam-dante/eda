@@ -14,3 +14,4 @@ export default function NewChat() {
 
   return <div>Creating new chat...</div>;
 }
+
