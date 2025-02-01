@@ -64,7 +64,7 @@ def ask_ollama(query):
         "model":"deepseek-r1:8b",
         "prompt": query,
         "stream": False,
-        "stop": ["<think> </think>"]
+        # "stop": ["<think> </think>"]
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
