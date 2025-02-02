@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import MarkdownRenderer from "./MarkdownRenderer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 interface Message {
   id: string;
@@ -36,23 +37,19 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await fetch("http://127.0.0.1:5000/search", {
-          
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
           },
           body: JSON.stringify({ text: input }),
         });
 
-        
         if (response.ok) {
           const data = await response.json();
           const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
-            content: attachment
-              ? `I received your attachment: ${attachment.name}`
-              : `${data["results"]}`,
+            content: attachment ? `${data["results"]}` : `${data["results"]}`,
             sender: "ai",
           };
           setMessages((prevMessages) => [...prevMessages, aiResponse]);
@@ -67,22 +64,18 @@ export default function Chat({ chatId }: { chatId: string }) {
       } catch (error) {
         console.log(input);
         toast({
-          className: cn(
-            "top-4 right-0 flex fixed md:max-w-[420px] md:right-4"
-          ),
+          className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
           description: `Failed to connect to the server ${error}`,
         });
       }
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         // 5MB limit
-
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
@@ -91,9 +84,40 @@ export default function Chat({ chatId }: { chatId: string }) {
           description: "Please upload a file smaller than 5MB.",
           variant: "destructive",
         });
-
         return;
       }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await axios.post(
+          "http://127.0.0.1:5000/upload",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        toast({
+          className: cn(
+            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+          ),
+          title: "File uploaded",
+          description: response.data.message,
+        });
+      } catch (error) {
+        toast({
+          className: cn(
+            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+          ),
+          title: "Upload failed",
+          description: error.response?.data?.error || "Failed to upload file.",
+          variant: "destructive",
+        });
+      }
+
       setAttachment(file);
       toast({
         className: cn(
