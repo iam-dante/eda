@@ -1,7 +1,7 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Paperclip } from "lucide-react";
+import { Paperclip, Loader2, Ellipsis } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import MarkdownRenderer from "./MarkdownRenderer";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,12 +19,20 @@ export default function Chat({ chatId }: { chatId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  },[messages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() || attachment) {
+      setIsLoading(true); // Start loading
       const newMessage: Message = {
         id: Date.now().toString(),
         content: input.trim(),
@@ -67,6 +75,8 @@ export default function Chat({ chatId }: { chatId: string }) {
           className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
           description: `Failed to connect to the server ${error}`,
         });
+      } finally {
+        setIsLoading(false); // Stop loading
       }
     }
   };
@@ -74,8 +84,8 @@ export default function Chat({ chatId }: { chatId: string }) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
+      if (file.size > 10 * 1024 * 1024) {
+       
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
@@ -142,7 +152,16 @@ export default function Chat({ chatId }: { chatId: string }) {
                     : "max-w-[90%] text-[17px] space-y-2"
                 }`}
               >
-                {message.sender === "ai" && <span>&#x2022; </span>}
+                {message.sender === "ai" && (
+                  <div>
+                    {" "}
+                    <div className="flex flex-col">
+                      {" "}
+                      <span>&#x2022;</span>{" "}
+                    </div>
+                  </div>
+                )}
+
                 <MarkdownRenderer content={message.content} />
                 {message.attachment && (
                   <div className="mt-2">
@@ -159,6 +178,13 @@ export default function Chat({ chatId }: { chatId: string }) {
               </div>
             </div>
           ))}
+
+          {isLoading && (
+            <div className="flex">
+              <Ellipsis className="h-8 w-8 text-black animate-pulse" />
+            </div>
+          )}
+          <div ref={bottomRef} />
         </div>
       </div>
       <div className=" h-[10%]  py-4 px-64">
@@ -169,11 +195,13 @@ export default function Chat({ chatId }: { chatId: string }) {
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
+                disabled={isLoading}
                 onChange={handleFileChange}
                 accept=".txt,.pdf,.doc,.docx"
               />
               <Input
                 type="text"
+                disabled={isLoading}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
@@ -193,30 +221,33 @@ export default function Chat({ chatId }: { chatId: string }) {
               <button
                 type="submit"
                 className="bg-black h-8 w-8 rounded-full flex justify-center items-center"
-                onClick={() => {
-                  handleFileChange;
-                }}
+                disabled={isLoading}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 22 22"
-                  strokeWidth={3}
-                  stroke="currentColor"
-                  className="size-4 text-white"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
-                  />
-                </svg>
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 text-white animate-spin" />
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 22 22"
+                    strokeWidth={3}
+                    stroke="currentColor"
+                    className="size-4 text-white"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
         </form>
       </div>
       <Toaster />
+      <div ref={bottomRef} />
     </div>
   );
 }

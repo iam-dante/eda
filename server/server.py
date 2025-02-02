@@ -58,6 +58,8 @@ def cleanup_uploads():
         shutil.rmtree(UPLOAD_FOLDER)
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+    # chroma_client.reset()
+
 # Register cleanup function to run on server shutdown
 atexit.register(cleanup_uploads)
 
@@ -171,7 +173,7 @@ def search():
             collection = chroma_client.get_collection(collection_info.name)
             results = collection.query(
                 query_texts=[user_input],
-                n_results=2
+                n_results=10
             )
             if results['documents'][0]:
                 all_results.extend(results['documents'][0])
