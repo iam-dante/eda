@@ -247,7 +247,6 @@ export default function Chat({ chatId }: { chatId: string }) {
         </form>
       </div>
       <Toaster />
-      <div ref={bottomRef} />
     </div>
   );
 }

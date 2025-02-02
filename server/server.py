@@ -128,18 +128,32 @@ def upload_file():
     return jsonify(response), status
 
 def ask_ollama(query, context=None):
+    prompt_test = f"""
+    You are a helpful assistant that answers questions based EXCLUSIVELY on the provided context. 
+    If the answer is not in the context, say "I don't have enough information to answer this."
+
+    **Context:**
+    {context}
+
+    **Question:**
+    {query}
+
+    **Instructions:**
+    1. Base your answer STRICTLY on the context above.
+    2. If unsure or the answer isn't in the context, state this clearly.
+    3. Keep responses concise and factual.
+    4. Use markdown formatting for clarity (e.g., bullet points, bold key terms).
+    5. Avoid speculation or external knowledge.
+
+    **Response:**
+
+    Do not put: I don't have enough information to answer this. The context is provided for you on the respond.
+    """
 
     if context is None:
         base_prompt=query
     else:
-        base_prompt = f"""
-        Based on the following context, please answer the query:
-
-        Context:
-        {context}
-
-        Query: {query}
-        """
+        base_prompt = prompt_test
     
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
@@ -171,12 +185,21 @@ def search():
         
         for collection_info in collections:
             collection = chroma_client.get_collection(collection_info.name)
-            results = collection.query(
-                query_texts=[user_input],
-                n_results=10
-            )
-            if results['documents'][0]:
-                all_results.extend(results['documents'][0])
+            try:
+                # Get the collection size
+                collection_size = len(collection.get()['ids'])
+                # Adjust n_results to not exceed collection size
+                n_results = min(3, collection_size) if collection_size > 0 else 1
+                
+                results = collection.query(
+                    query_texts=[user_input],
+                    n_results=n_results
+                )
+                if results['documents'][0]:
+                    all_results.extend(results['documents'][0])
+            except Exception as e:
+                print(f"Error querying collection {collection_info.name}: {e}")
+                continue
 
         # Get the relevant context from all results
         context = "\n".join(all_results) if all_results else ""
