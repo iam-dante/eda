@@ -220,7 +220,7 @@ def llm_online(query, context=None):
         """
 
     client = openai.OpenAI(
-        api_key=os.environ.get(SAMBANOVA_API_KEY),
+        api_key=SAMBANOVA_API_KEY
         base_url="https://api.sambanova.ai/v1",
     )
 
