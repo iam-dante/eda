@@ -44,7 +44,7 @@ export default function Chat({ chatId }: { chatId: string }) {
       setAttachment(null);
 
       try {
-        const response = await fetch("http://127.0.0.1:5000/search", {
+        const response = await fetch("https://52.41.36.82/search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:5000/upload",
+          "https://52.41.36.82/upload",
           formData,
           {
             headers: {

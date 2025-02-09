@@ -14,6 +14,7 @@ import fitz  # PyMuPDF for PDF processing
 import logging
 from dotenv import load_dotenv
 import subprocess
+import openai
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -27,6 +28,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 load_dotenv()
 
 CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
+SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
 
 
 # Initialize ChromaDB client
@@ -195,6 +197,42 @@ def ask_ollama(query, context=None):
     except Exception as e:
         logging.error(f"Error querying OLLAMA: {e}")
         return "Error retrieving response"
+    
+def llm_online(query, context=None):
+    """Query OLLAMA model with extracted context."""
+
+    if context:
+        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
+        **Context:**
+        {context}
+
+        **Question:**
+        {query}
+
+        **Answer:**
+        """
+    else:
+        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
+        **Question:**
+        {query}
+
+        **Answer:**
+        """
+
+    client = openai.OpenAI(
+        api_key=os.environ.get(SAMBANOVA_API_KEY),
+        base_url="https://api.sambanova.ai/v1",
+    )
+
+    response = client.chat.completions.create(
+        model="Meta-Llama-3.1-8B-Instruct",
+        messages=[{"role":"system","content":prompt}],
+        temperature=0.7,
+        top_p=0.1
+    )
+
+    return response.choices[0].message.content
+
 
 @app.route("/search", methods=["POST"])
 def search():
@@ -218,7 +256,8 @@ def search():
             all_results.extend(results['documents'][0])
 
         context = "\n".join(all_results) if all_results else ""
-        answer = ask_ollama(user_input, context)
+        # answer = ask_ollama(user_input, context)
+        answer = llm_online(user_input, context)
         
         return jsonify({"results": answer}), 200
 
