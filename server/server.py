@@ -166,17 +166,14 @@ def extract_text():
 
 def ask_ollama(query, context=None):
     """Query OLLAMA model with extracted context."""
-    prompt = f"""
-    You are a helpful assistant that answers questions based ONLY on the provided context. 
-    If the answer is not in the context, say "I don't have enough information to answer this."
-
+    prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
     **Context:**
     {context}
 
     **Question:**
     {query}
 
-    **Response:**
+    **Answer:**
     """
 
     url = "http://localhost:11434/api/generate"
@@ -205,6 +202,7 @@ def search():
         collection = get_or_create_collection()
         collection_size = len(collection.get()['ids'])
         n_results = min(5, collection_size) if collection_size > 0 else 1
+        print(n_results)
         
         results = collection.query(query_texts=[user_input], n_results=n_results)
         

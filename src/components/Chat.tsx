@@ -140,7 +140,7 @@ export default function Chat({ chatId }: { chatId: string }) {
   };
 
   return (
-    <div key={chatId} className="h-screen md:ml-64  ">
+    <div key={chatId} className="h-screen">
       <div className="h-[90%] overflow-y-auto  py-8 px-64">
         <div className="space-y-2 flex flex-col min-h-full  w-full">
           {messages.map((message) => (

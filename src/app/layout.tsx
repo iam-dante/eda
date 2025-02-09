@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={""}>
         <div className="flex h-screen bg-white">
-          <Slidebar />
+          {/* <Slidebar /> */}
           <main className="flex-1 overflow-auto">{children}</main>
           <Toaster />
         </div>
