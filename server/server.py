@@ -13,6 +13,7 @@ import re
 import fitz  # PyMuPDF for PDF processing
 import logging
 from dotenv import load_dotenv
+import subprocess
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -40,7 +41,14 @@ chroma_client = chromadb.HttpClient(
 )
 
 # Load SpaCy model
-nlp = spacy.load("en_core_web_sm")
+import subprocess
+
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
