@@ -225,7 +225,7 @@ def llm_online(query, context=None):
     )
 
     response = client.chat.completions.create(
-        model="Meta-Llama-3.1-8B-Instruct",
+        model="Meta-Llama-3.3-70B-Instruct",
         messages=[{"role":"system","content":prompt}],
         temperature=0.7,
         top_p=0.1
