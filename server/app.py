@@ -202,7 +202,7 @@ def llm_online(query, context=None):
     """Query OLLAMA model with extracted context."""
 
     if context:
-        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
+        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, try to use your general knowledge.  Do not mention the context in your response.
         **Context:**
         {context}
 
@@ -212,11 +212,9 @@ def llm_online(query, context=None):
         **Answer:**
         """
     else:
-        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
-        **Question:**
+        prompt = f"""
+        Please answer the following question:
         {query}
-
-        **Answer:**
         """
 
     client = openai.OpenAI(
