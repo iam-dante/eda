@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Slidebar from "../components/Slidebar";
+// import Slidebar from "../components/Slidebar";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 

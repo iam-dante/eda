@@ -117,7 +117,7 @@ export default function Chat({ chatId }: { chatId: string }) {
           title: "File uploaded",
           description: response.data.message,
         });
-      } catch (error) {
+      } catch (error: any) {
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
