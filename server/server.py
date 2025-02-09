@@ -1,135 +1,173 @@
-from flask import Flask, request, jsonify 
-from flask_cors import CORS 
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import chromadb
 import json
 import requests
 from PyPDF2 import PdfReader
 import uuid
-import shutil
 import atexit
 from datetime import datetime
+import spacy
+import re
+import fitz  # PyMuPDF for PDF processing
+import logging
+from dotenv import load_dotenv
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx'}
-MAX_FILE_SIZE = 10 * 1024 * 1024
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Allowed file types & max size
+ALLOWED_EXTENSIONS = {'txt', 'pdf'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Initialize ChromaDB with separate collections
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+load_dotenv()
 
-def get_or_create_collection(file_id):
-    """Get or create a collection for a specific file"""
-    collection_name = f"document_{file_id}"
+CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
+
+
+# Initialize ChromaDB client
+chroma_client = chromadb.HttpClient(
+    ssl=True,
+    host='api.trychroma.com',
+    tenant='c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed',
+    database='rag-0a14d70f',
+    headers={
+        'x-chroma-token': CHROMADB_API_TOKEN
+    }
+)
+
+# Load SpaCy model
+nlp = spacy.load("en_core_web_sm")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+instance_id = str(uuid.uuid4())
+collection_name = f"documents_{instance_id}"
+
+def get_or_create_collection():
+    """Ensure a single ChromaDB collection exists."""
+    global collection_name
     try:
-        return chroma_client.get_or_create_collection(name=collection_name)
-    except Exception as e:
-        print(f"ChromaDB collection error: {e}")
-        return None
+        collection = chroma_client.get_collection(name=collection_name)
+    except:
+        collection = chroma_client.create_collection(name=collection_name)
+    return collection
 
-def extract_text_from_pdf(file_path):
-    with open(file_path, 'rb') as file:
-        reader = PdfReader(file)
-        text = ''
-        for page in reader.pages:
-            text += page.extract_text()
-    return text
+def extract_text_from_pdf(file_stream):
+    """Extract text from a PDF file."""
+    pdf_bytes = file_stream.read()
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        pages_text = [
+            {"page_number": page_number + 1, "text": page.get_text()}
+            for page_number, page in enumerate(doc)
+        ]
+    return pages_text
 
-def process_uploaded_file(file_path):
+def process_uploaded_file(file):
+    """Extract text from uploaded files."""
     try:
-        if file_path.endswith('.pdf'):
-            return extract_text_from_pdf(file_path)
-        elif file_path.endswith('.txt'):
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
+        if file.filename.lower().endswith('.pdf'):
+            return extract_text_from_pdf(file)
+        elif file.filename.lower().endswith('.txt'):
+            text = file.read().decode('utf-8')
+            return [{"page_number": 1, "text": text}]
         else:
             return None
     except Exception as e:
-        print(f"Error processing file: {e}")
+        logging.error(f"Error processing file: {e}")
         return None
 
-def cleanup_uploads():
-    """Clean up uploads folder on server shutdown"""
-    if os.path.exists(UPLOAD_FOLDER):
-        shutil.rmtree(UPLOAD_FOLDER)
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+def process_text(pages_text, slice_size=6):
+    """Convert extracted text into structured chunks for ChromaDB."""
+    long_chunks = []
+    long_chunks_metadata = []
 
-    # chroma_client.reset()
+    def sentence_split(sentences_list, slice_size):
+        return [sentences_list[i:i + slice_size] for i in range(0, len(sentences_list), slice_size)]
 
-# Register cleanup function to run on server shutdown
-atexit.register(cleanup_uploads)
+    for item in pages_text:
+        try:
+            if isinstance(item["text"], str):
+                doc = nlp(item["text"])
+                sentences = [str(sentence) for sentence in list(doc.sents)]
+                chunks = sentence_split(sentences, slice_size)
 
-# Clean up on startup
-cleanup_uploads()
+                for chunk in chunks:
+                    chunk_text = " ".join(chunk).replace("\xa0", "").strip()
+                    chunk_text = re.sub(r'\.([A-Z])', r'. \1', chunk_text)
 
-def save_file(file):
+                    long_chunks.append(chunk_text)
+                    long_chunks_metadata.append({"page_number": item["page_number"]})
+            else:
+                raise TypeError("Item text is not a string")
+        except Exception as e:
+            logging.error(f"Error processing text: {e}")
+
+    return long_chunks, long_chunks_metadata
+
+def save_to_chromadb(file):
+    """Process the file and store chunks in ChromaDB."""
     if file.filename == '':
         return {'error': 'No file selected'}, 400
 
     if not file.filename.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
         return {'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}, 400
 
-    # Clean up old files in the uploads directory
-    for old_file in os.listdir(UPLOAD_FOLDER):
-        old_file_path = os.path.join(UPLOAD_FOLDER, old_file)
-        if os.path.isfile(old_file_path):
-            os.remove(old_file_path)
-
-    file.seek(0)
     file_id = str(uuid.uuid4())
-    extension = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"{file_id}.{extension}"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    
-    file.save(filepath)
-    
-    # Process file and create new collection
-    content = process_uploaded_file(filepath)
-    if content:
-        try:
-            # Create new collection for this file
-            collection = get_or_create_collection(file_id)
-            if collection:
-                # Split content into chunks (simple splitting by paragraphs)
-                chunks = [chunk.strip() for chunk in content.split('\n\n') if chunk.strip()]
-                
-                # Add chunks to collection
-                collection.add(
-                    documents=chunks,
-                    ids=[f"{file_id}_{i}" for i in range(len(chunks))],
-                    metadatas=[{
-                        "filename": file.filename,
-                        "filepath": filepath,
-                        "timestamp": str(datetime.now()),
-                        "chunk_id": i
-                    } for i in range(len(chunks))]
-                )
-                return {
-                    'message': 'File uploaded and processed successfully',
-                    'file_id': file_id,
-                    'filepath': filepath
-                }, 200
-        except Exception as e:
-            return {'error': f'Failed to process file: {str(e)}'}, 500
-    
+    pages_text = process_uploaded_file(file)
+
+    if not pages_text:
+        return {'error': 'Failed to process file'}, 500
+
+    try:
+        long_chunks, long_chunks_metadata = process_text(pages_text)
+        logging.info(f"Number of long chunks: {len(long_chunks)}")
+        collection = get_or_create_collection()
+
+        if collection:
+            collection.add(
+                documents=long_chunks,
+                ids=[f"{file_id}_{i}" for i in range(len(long_chunks))],
+                metadatas=[{**meta, "file_id": file_id} for meta in long_chunks_metadata]
+            )
+            return {'message': 'File processed and uploaded successfully', 'file_id': file_id}, 200
+    except Exception as e:
+        logging.error(f"Failed to process file: {e}")
+        return {'error': f'Failed to process file: {str(e)}'}, 500
+
     return {'error': 'Failed to process file'}, 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """Handle file upload and store in ChromaDB."""
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    response, status = save_file(file)
+    response, status = save_to_chromadb(file)
     return jsonify(response), status
 
+@app.route('/extract_text', methods=['POST'])
+def extract_text():
+    """Return extracted text before processing."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+
+    file = request.files['file']
+    pages_text = process_uploaded_file(file)
+    
+    if pages_text:
+        return jsonify({'text': pages_text}), 200
+    return jsonify({'error': 'Failed to extract text'}), 500
+
 def ask_ollama(query, context=None):
-    prompt_test = f"""
-    You are a helpful assistant that answers questions based EXCLUSIVELY on the provided context. 
+    """Query OLLAMA model with extracted context."""
+    prompt = f"""
+    You are a helpful assistant that answers questions based ONLY on the provided context. 
     If the answer is not in the context, say "I don't have enough information to answer this."
 
     **Context:**
@@ -138,40 +176,24 @@ def ask_ollama(query, context=None):
     **Question:**
     {query}
 
-    **Instructions:**
-    1. Base your answer STRICTLY on the context above.
-    2. If unsure or the answer isn't in the context, state this clearly.
-    3. Keep responses concise and factual.
-    4. Use markdown formatting for clarity (e.g., bullet points, bold key terms).
-    5. Avoid speculation or external knowledge.
-
     **Response:**
-
-    Do not put: I don't have enough information to answer this. The context is provided for you on the respond.
     """
 
-    if context is None:
-        base_prompt=query
-    else:
-        base_prompt = prompt_test
-    
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
-    data = {
-        "model": "llama3.2",
-        "prompt": base_prompt,
-        "stream": False,
-    }
+    data = {"model": "llama3.2", "prompt": prompt if context else query, "stream": False}
 
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
-        return response.json()['response']
+        return response.json().get('response', 'Error: No response received')
     except Exception as e:
-        return f"Error: {str(e)}"
+        logging.error(f"Error querying OLLAMA: {e}")
+        return "Error retrieving response"
 
 @app.route("/search", methods=["POST"])
 def search():
+    """Retrieve relevant data from ChromaDB and query OLLAMA."""
     try:
         data = request.get_json()
         user_input = data.get("text", "").strip()
@@ -179,41 +201,24 @@ def search():
         if not user_input:
             return jsonify({"error": "Missing user input"}), 400
 
-        # Search across all collections
         all_results = []
-        collections = chroma_client.list_collections()
+        collection = get_or_create_collection()
+        collection_size = len(collection.get()['ids'])
+        n_results = min(5, collection_size) if collection_size > 0 else 1
         
-        for collection_info in collections:
-            collection = chroma_client.get_collection(collection_info.name)
-            try:
-                # Get the collection size
-                collection_size = len(collection.get()['ids'])
-                # Adjust n_results to not exceed collection size
-                n_results = min(3, collection_size) if collection_size > 0 else 1
-                
-                results = collection.query(
-                    query_texts=[user_input],
-                    n_results=n_results
-                )
-                if results['documents'][0]:
-                    all_results.extend(results['documents'][0])
-            except Exception as e:
-                print(f"Error querying collection {collection_info.name}: {e}")
-                continue
+        results = collection.query(query_texts=[user_input], n_results=n_results)
+        
+        if results.get('documents', [[]])[0]:
+            all_results.extend(results['documents'][0])
 
-        # Get the relevant context from all results
         context = "\n".join(all_results) if all_results else ""
-        
-        # Get response from Ollama
         answer = ask_ollama(user_input, context)
         
         return jsonify({"results": answer}), 200
 
     except Exception as e:
+        logging.error(f"Search failed: {e}")
         return jsonify({"error": f"Search failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    # Ensure cleanup happens on startup
-    cleanup_uploads()
     app.run(debug=True)
-
