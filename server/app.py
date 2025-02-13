@@ -239,6 +239,7 @@ def llm_online(query, context=None):
         top_p=0.1
     )
 
+
     return response.choices[0].message.content
 
 
