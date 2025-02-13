@@ -16,6 +16,8 @@ interface Message {
 }
 
 export default function Chat({ chatId }: { chatId: string }) {
+  const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
@@ -29,10 +31,125 @@ export default function Chat({ chatId }: { chatId: string }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   },[messages]);
 
+  const production_url = "https://web-rag.onrender.com";
+  const local_url = "http://127.0.0.1:5000";
+
+
+  // const sendMessage = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (input.trim() || attachment) {
+  //     setIsLoading(true); // Start loading
+  //     const newMessage: Message = {
+  //       id: Date.now().toString(),
+  //       content: input.trim(),
+  //       sender: "user",
+  //       attachment: attachment ? URL.createObjectURL(attachment) : undefined,
+  //     };
+  //     setMessages([...messages, newMessage]);
+  //     setInput("");
+  //     setAttachment(null);
+
+  //     try {
+  //       const response = await fetch("http://127.0.0.1:5000/search", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //         },
+  //         body: JSON.stringify({ text: input }),
+  //       });
+
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         const aiResponse: Message = {
+  //           id: (Date.now() + 1).toString(),
+  //           content: attachment ? `${data["results"]}` : `${data["results"]}`,
+  //           sender: "ai",
+  //         };
+  //         setMessages((prevMessages) => [...prevMessages, aiResponse]);
+  //       } else {
+  //         const errorData = await response.json();
+  //         toast({
+  //           description:
+  //             errorData.error ||
+  //             "An error occurred while processing your text.",
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.log(input);
+  //       toast({
+  //         className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
+  //         description: `Failed to connect to the server ${error}`,
+  //       });
+  //     } finally {
+  //       setIsLoading(false); // Stop loading
+  //     }
+  //   }
+  // };
+
+  // const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     if (file.size > 10 * 1024 * 1024) {
+       
+  //       toast({
+  //         className: cn(
+  //           "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+  //         ),
+  //         title: "File too large",
+  //         description: "Please upload a file smaller than 5MB.",
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+
+  //     setIsUploading(true);
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+
+  //     try {
+  //       const response = await axios.post(
+  //         "https://web-rag.onrender.com/upload",
+  //         formData,
+  //         {
+  //           headers: {
+  //             "Content-Type": "multipart/form-data",
+  //           },
+  //         }
+  //       );
+  //       toast({
+  //         className: cn(
+  //           "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+  //         ),
+  //         title: "File uploaded",
+  //         description: response.data.message,
+  //       });
+  //     } catch (error: any) {
+  //       toast({
+  //         className: cn(
+  //           "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+  //         ),
+  //         title: "Upload failed",
+  //         description: error.response?.data?.error || "Failed to upload file.",
+  //         variant: "destructive",
+  //       });
+  //     }
+
+  //     setAttachment(file);
+  //     toast({
+  //       className: cn(
+  //         "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+  //       ),
+  //       title: "File attached",
+  //       description: `${file.name} is ready to be sent.`,
+  //     });
+  //   }
+  // };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() || attachment) {
-      setIsLoading(true); // Start loading
+      setIsLoading(true);
       const newMessage: Message = {
         id: Date.now().toString(),
         content: input.trim(),
@@ -44,7 +161,7 @@ export default function Chat({ chatId }: { chatId: string }) {
       setAttachment(null);
 
       try {
-        const response = await fetch("https://web-rag.onrender.com/search", {
+        const response = await fetch("http://127.0.0.1:5000/search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -53,30 +170,47 @@ export default function Chat({ chatId }: { chatId: string }) {
           body: JSON.stringify({ text: input }),
         });
 
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const textResponse = await response.text();
+          throw new Error(`Invalid response format: ${textResponse}`);
+        }
+
         if (response.ok) {
-          const data = await response.json();
           const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
-            content: attachment ? `${data["results"]}` : `${data["results"]}`,
+            content:
+              data["results"] || "Sorry, I couldn't process that request.",
             sender: "ai",
           };
           setMessages((prevMessages) => [...prevMessages, aiResponse]);
         } else {
-          const errorData = await response.json();
           toast({
+            className: cn(
+              "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+            ),
+            title: "Error",
             description:
-              errorData.error ||
-              "An error occurred while processing your text.",
+              data.error || "An error occurred while processing your request.",
+            variant: "destructive",
           });
         }
       } catch (error) {
-        console.log(input);
+        console.error("Error details:", error);
         toast({
           className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
-          description: `Failed to connect to the server ${error}`,
+          title: "Error",
+          description:
+            error instanceof Error
+              ? `Failed to process request: ${error.message}`
+              : "An unexpected error occurred",
+          variant: "destructive",
         });
       } finally {
-        setIsLoading(false); // Stop loading
+        setIsLoading(false);
       }
     }
   };
@@ -85,7 +219,6 @@ export default function Chat({ chatId }: { chatId: string }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-       
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
@@ -97,12 +230,13 @@ export default function Chat({ chatId }: { chatId: string }) {
         return;
       }
 
+      setIsUploading(true); // Start upload loading
       const formData = new FormData();
       formData.append("file", file);
 
       try {
         const response = await axios.post(
-          "https://web-rag.onrender.com/upload",
+          local_url + "/upload",
           formData,
           {
             headers: {
@@ -110,9 +244,11 @@ export default function Chat({ chatId }: { chatId: string }) {
             },
           }
         );
+        setAttachment(file);
+        setIsInitialUploadDone(true);
         toast({
           className: cn(
-            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-green-700 text-white"
           ),
           title: "File uploaded",
           description: response.data.message,
@@ -126,16 +262,9 @@ export default function Chat({ chatId }: { chatId: string }) {
           description: error.response?.data?.error || "Failed to upload file.",
           variant: "destructive",
         });
+      } finally {
+        setIsUploading(false); // End upload loading
       }
-
-      setAttachment(file);
-      toast({
-        className: cn(
-          "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
-        ),
-        title: "File attached",
-        description: `${file.name} is ready to be sent.`,
-      });
     }
   };
 
@@ -201,27 +330,49 @@ export default function Chat({ chatId }: { chatId: string }) {
               />
               <Input
                 type="text"
-                disabled={isLoading}
+                disabled={isLoading || (!isInitialUploadDone && !attachment)} // Modified this line
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
-                  attachment
-                    ? `${attachment.name} attached`
+                  isUploading
+                    ? "Uploading file..."
+                    : !isInitialUploadDone && !attachment
+                    ? "Upload a document to start a session..."
                     : "Type your message..."
                 }
-                className=" w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0"
+                className={cn(
+                  "w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                  !isInitialUploadDone && !attachment && "cursor-not-allowed"
+                )}
               />
-              <button
+              {/* <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="mr-2"
               >
                 <Paperclip className="h-6 w-6 -rotate-45 " />
+              </button> */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mr-2"
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                ) : (
+                  <Paperclip className="h-6 w-6 -rotate-45" />
+                )}
               </button>
               <button
                 type="submit"
-                className="bg-black h-8 w-8 rounded-full flex justify-center items-center"
-                disabled={isLoading}
+                className={cn(
+                  "bg-black h-8 w-8 rounded-full flex justify-center items-center",
+                  !isInitialUploadDone &&
+                    !attachment &&
+                    "opacity-50 cursor-not-allowed"
+                )}
+                disabled={isLoading || (!isInitialUploadDone && !attachment)}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 text-white animate-spin" />

@@ -176,15 +176,25 @@ def extract_text():
 
 def ask_ollama(query, context=None):
     """Query OLLAMA model with extracted context."""
-    prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, say "I cannot answer this question based on the provided information."  Do not mention the context in your response.  Be concise and direct.
-    **Context:**
-    {context}
+    prompt = f"""
+            You are an advanced Retrieval-Augmented Generation (RAG) system designed to provide highly accurate and contextually relevant responses. Use *only* the information provided in the context below to generate your answer. Do not use any prior knowledge or external sources. If the context does not contain enough information to answer the question, explicitly state: "I cannot answer this question based on the provided information."
 
-    **Question:**
-    {query}
+            ## Instructions:
+            - Analyze the retrieved context carefully to extract the most relevant details.
+            - Ensure that your answer is comprehensive, well-structured, and directly addresses the user's question.
+            - If multiple pieces of evidence exist in the context, synthesize them for a cohesive response.
+            - If the context is unclear, ambiguous, or conflicting, acknowledge this uncertainty in your response.
+            - Do not assume or infer facts beyond what is stated in the provided context.
 
-    **Answer:**
-    """
+            ## Context:
+            {context}
+
+            ## Question:
+            {query}
+
+            ## Answer:
+            """
+
 
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
@@ -254,8 +264,8 @@ def search():
             all_results.extend(results['documents'][0])
 
         context = "\n".join(all_results) if all_results else ""
-        # answer = ask_ollama(user_input, context)
-        answer = llm_online(user_input, context)
+        answer = ask_ollama(user_input, context)
+        # answer = llm_online(user_input, context)
         
         return jsonify({"results": answer}), 200
 
