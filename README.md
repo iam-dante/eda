@@ -1,37 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI-Powered Learning Assistant
 
-## Getting Started
+## 📚 Overview
+The **AI-Powered Learning Assistant** is an intelligent tool designed to enhance learning experiences by leveraging Retrieval-Augmented Generation (RAG). Users can upload documents, and the assistant processes the content to generate conversational responses, enabling an interactive learning experience.
 
-First, run the development server:
+## 🚀 Features
+- **Document-Based Learning** – Users upload documents, and the AI generates interactive responses.
+- **AI-Powered Q&A** – Provides answers and explanations based on the document's content.
+- **Content Summarization** – Extracts key points from uploaded materials.
+- **Interactive Chatbot** – Engages users in meaningful discussions based on document context.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🛠️ Technology Stack
+- **Backend:** Python, Flask/FastAPI, LangChain
+- **Frontend:** Next.js
+- **Database:** Vector Databases (--)
+- **AI Models:**  BERT, Transformer-based models
+- **Deployment:** Vercel, Render
+
+## 📥 Installation
+### Clone the Repository
+```sh
+git clone https://github.com/iam-dante/web-rag.git
+cd web-rag
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install Dependencies
+```sh
+pip install -r requirements.txt
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Run the Application
+```sh
+# Start backend
+python ./server/app.py
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Start frontend
+yarn run dev
+```
 
-## Learn More
+## 🧠 Usage
+1. Upload a document through the web interface.
+2. Interact with the chatbot to receive responses based on the document's content.
+3. Get summaries, explanations, and insights from the uploaded material.
+4. Engage in a dynamic learning experience with AI-driven conversations.
 
-To learn more about Next.js, take a look at the following resources:
+## 🤝 Contributing
+We welcome contributions! Follow these steps:
+1. Fork the repository.
+2. Create a new branch: `git checkout -b feature-branch`
+3. Commit your changes: `git commit -m 'Add a new feature'`
+4. Push to your branch: `git push origin feature-branch`
+5. Open a pull request.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📜 License
+This project is licensed under the [MIT License](LICENSE).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📞 Contact
+For any inquiries or feedback, reach out to [iq58974@umbc.edu](mailto:iq58974@umbc.edu) or open an issue on GitHub.
 
-## Deploy on Vercel
+Happy Learning! 🎓🚀
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# web-rag
