@@ -210,7 +210,6 @@ def ask_ollama(query, context=None):
     
 def llm_online(query, context=None):
     """Query OLLAMA model with extracted context."""
-
     if context:
         prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, try to use your general knowledge.  Do not mention the context in your response.
         **Context:**
