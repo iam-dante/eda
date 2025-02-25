@@ -58,98 +58,167 @@ logging.basicConfig(level=logging.INFO)
 instance_id = str(uuid.uuid4())
 collection_name = f"documents_{instance_id}"
 
-def get_or_create_collection():
-    """Ensure a single ChromaDB collection exists."""
-    global collection_name
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-    except:
-        collection = chroma_client.create_collection(name=collection_name)
-    return collection
+# def get_or_create_collection():
+#     """Ensure a single ChromaDB collection exists."""
+#     global collection_name
+#     try:
+#         collection = chroma_client.get_collection(name=collection_name)
+#     except:
+#         collection = chroma_client.create_collection(name=collection_name)
+#     return collection
 
-def extract_text_from_pdf(file_stream):
-    """Extract text from a PDF file."""
-    pdf_bytes = file_stream.read()
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-        pages_text = [
-            {"page_number": page_number + 1, "text": page.get_text()}
-            for page_number, page in enumerate(doc)
-        ]
-    return pages_text
+# def extract_text_from_pdf(file_stream):
+#     """Extract text from a PDF file."""
+#     pdf_bytes = file_stream.read()
+#     with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+#         pages_text = [
+#             {"page_number": page_number + 1, "text": page.get_text()}
+#             for page_number, page in enumerate(doc)
+#         ]
+#     return pages_text
 
-def process_uploaded_file(file):
-    """Extract text from uploaded files."""
-    try:
-        if file.filename.lower().endswith('.pdf'):
-            return extract_text_from_pdf(file)
-        elif file.filename.lower().endswith('.txt'):
-            text = file.read().decode('utf-8')
-            return [{"page_number": 1, "text": text}]
-        else:
-            return None
-    except Exception as e:
-        logging.error(f"Error processing file: {e}")
-        return None
+# def process_uploaded_file(file):
+#     """Extract text from uploaded files."""
+#     try:
+#         if file.filename.lower().endswith('.pdf'):
+#             return extract_text_from_pdf(file)
+#         elif file.filename.lower().endswith('.txt'):
+#             text = file.read().decode('utf-8')
+#             return [{"page_number": 1, "text": text}]
+#         else:
+#             return None
+#     except Exception as e:
+#         logging.error(f"Error processing file: {e}")
+#         return None
 
-def process_text(pages_text, slice_size=6):
-    """Convert extracted text into structured chunks for ChromaDB."""
-    long_chunks = []
-    long_chunks_metadata = []
+# def process_text(pages_text, slice_size=6):
+#     """Convert extracted text into structured chunks for ChromaDB."""
+#     long_chunks = []
+#     long_chunks_metadata = []
 
-    def sentence_split(sentences_list, slice_size):
-        return [sentences_list[i:i + slice_size] for i in range(0, len(sentences_list), slice_size)]
+#     def sentence_split(sentences_list, slice_size):
+#         return [sentences_list[i:i + slice_size] for i in range(0, len(sentences_list), slice_size)]
 
-    for item in pages_text:
-        try:
-            if isinstance(item["text"], str):
-                doc = nlp(item["text"])
-                sentences = [str(sentence) for sentence in list(doc.sents)]
-                chunks = sentence_split(sentences, slice_size)
+#     for item in pages_text:
+#         try:
+#             if isinstance(item["text"], str):
+#                 doc = nlp(item["text"])
+#                 sentences = [str(sentence) for sentence in list(doc.sents)]
+#                 chunks = sentence_split(sentences, slice_size)
 
-                for chunk in chunks:
-                    chunk_text = " ".join(chunk).replace("\xa0", "").strip()
-                    chunk_text = re.sub(r'\.([A-Z])', r'. \1', chunk_text)
+#                 for chunk in chunks:
+#                     chunk_text = " ".join(chunk).replace("\xa0", "").strip()
+#                     chunk_text = re.sub(r'\.([A-Z])', r'. \1', chunk_text)
 
-                    long_chunks.append(chunk_text)
-                    long_chunks_metadata.append({"page_number": item["page_number"]})
-            else:
-                raise TypeError("Item text is not a string")
-        except Exception as e:
-            logging.error(f"Error processing text: {e}")
+#                     long_chunks.append(chunk_text)
+#                     long_chunks_metadata.append({"page_number": item["page_number"]})
+#             else:
+#                 raise TypeError("Item text is not a string")
+#         except Exception as e:
+#             logging.error(f"Error processing text: {e}")
 
-    return long_chunks, long_chunks_metadata
+#     return long_chunks, long_chunks_metadata
 
-def save_to_chromadb(file):
-    """Process the file and store chunks in ChromaDB."""
-    if file.filename == '':
-        return {'error': 'No file selected'}, 400
+# def save_to_chromadb(file):
+#     """Process the file and store chunks in ChromaDB."""
+#     if file.filename == '':
+#         return {'error': 'No file selected'}, 400
 
-    if not file.filename.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
-        return {'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}, 400
+#     if not file.filename.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
+#         return {'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}, 400
 
-    file_id = str(uuid.uuid4())
-    pages_text = process_uploaded_file(file)
+#     file_id = str(uuid.uuid4())
+#     pages_text = process_uploaded_file(file)
 
-    if not pages_text:
-        return {'error': 'Failed to process file'}, 500
+#     if not pages_text:
+#         return {'error': 'Failed to process file'}, 500
 
-    try:
-        long_chunks, long_chunks_metadata = process_text(pages_text)
-        logging.info(f"Number of long chunks: {len(long_chunks)}")
-        collection = get_or_create_collection()
+#     try:
+#         long_chunks, long_chunks_metadata = process_text(pages_text)
+#         logging.info(f"Number of long chunks: {len(long_chunks)}")
+#         collection = get_or_create_collection()
 
-        if collection:
-            collection.add(
-                documents=long_chunks,
-                ids=[f"{file_id}_{i}" for i in range(len(long_chunks))],
-                metadatas=[{**meta, "file_id": file_id} for meta in long_chunks_metadata]
-            )
-            return {'message': 'File processed and uploaded successfully', 'file_id': file_id}, 200
-    except Exception as e:
-        logging.error(f"Failed to process file: {e}")
-        return {'error': f'Failed to process file: {str(e)}'}, 500
+#         if collection:
+#             collection.add(
+#                 documents=long_chunks,
+#                 ids=[f"{file_id}_{i}" for i in range(len(long_chunks))],
+#                 metadatas=[{**meta, "file_id": file_id} for meta in long_chunks_metadata]
+#             )
+#             return {'message': 'File processed and uploaded successfully', 'file_id': file_id}, 200
+#     except Exception as e:
+#         logging.error(f"Failed to process file: {e}")
+#         return {'error': f'Failed to process file: {str(e)}'}, 500
 
-    return {'error': 'Failed to process file'}, 500
+#     return {'error': 'Failed to process file'}, 500
+import re
+import unicodedata
+
+def clean_text_(text):
+    # text = text.replace("\n", " ")  # Replace newlines with spaces
+    text = re.sub(r'\s+', ' ', str(text))  # Remove extra spaces
+    return text.strip()  # Trim leading and trailing spaces
+
+def remove_special_chars(text):
+    text = re.sub(r'[^a-zA-Z0-9.,!?\'" ]', '', text)  # Keep letters, numbers, and common punctuation
+    return text
+
+def fix_hyphenation(text):
+    return re.sub(r'(\w+)-\s+(\w+)', r'\1\2', text)  # Removes hyphenation across lines
+
+def normalize_unicode(text):
+    return unicodedata.normalize("NFKD", text)
+
+def remove_headers_footers(text):
+    lines = text.split("\n")
+    cleaned_lines = [line for line in lines if not re.match(r'(Page \d+|Confidential|Company Name)', line)]
+    return " ".join(cleaned_lines)
+
+def normalize_text(text):
+    return " ".join(text.lower().split())
+
+def full_text_cleanup(text):
+    """"
+    Takes in unclean text and return cleaned text by applying a series of cleaning functions.
+    
+    """
+    text = clean_text_(text)
+    text = fix_hyphenation(text)
+    text = remove_special_chars(text)
+    text = normalize_unicode(text)
+    text = remove_headers_footers(text)
+    text = normalize_text(text)
+    
+    return text
+
+from langchain.document_loaders import PyMuPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
+
+def extract_text_langchain(pdf_path):
+    loader = PyMuPDFLoader(pdf_path)
+    documents = loader.load()
+    return "\n".join([doc.page_content for doc in documents])
+
+
+def lang_clean_text(text):
+    # text = text.replace("\n", " ").strip()  
+    text = full_text_cleanup(text)
+    text_splitter = CharacterTextSplitter(chunk_size=100, chunk_overlap=20)
+    return text_splitter.split_text(text)
+
+def split_text_into_sentences(text):
+    text_splitter = NLTKTextSplitter()
+    sentences = text_splitter.split_text(text)
+    cleaned_sentences = [sentence.replace("\n", " ") for sentence in sentences]
+    return cleaned_sentences
+
+
+def create_resources(file_path):
+    lang_text = extract_text_langchain(file_path)
+    lang_cleaned_text = lang_clean_text(lang_text)
+    lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+
+    return{'message': 'File processed and uploaded successfully', 'data':lang_sentences }, 200
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -158,21 +227,21 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    response, status = save_to_chromadb(file)
-    return jsonify(response), status
+    _, status = create_resources(file)
+    return jsonify(_), status
 
-@app.route('/extract_text', methods=['POST'])
-def extract_text():
-    """Return extracted text before processing."""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part in the request'}), 400
+# @app.route('/extract_text', methods=['POST'])
+# def extract_text():
+#     """Return extracted text before processing."""
+#     if 'file' not in request.files:
+#         return jsonify({'error': 'No file part in the request'}), 400
 
-    file = request.files['file']
-    pages_text = process_uploaded_file(file)
+#     file = request.files['file']
+#     pages_text = process_uploaded_file(file)
     
-    if pages_text:
-        return jsonify({'text': pages_text}), 200
-    return jsonify({'error': 'Failed to extract text'}), 500
+#     if pages_text:
+#         return jsonify({'text': pages_text}), 200
+#     return jsonify({'error': 'Failed to extract text'}), 500
 
 def ask_ollama(query, context=None):
     """Query OLLAMA model with extracted context."""
@@ -184,7 +253,7 @@ def ask_ollama(query, context=None):
 
             1. **Context Retrieval (Step 1):**
             - **Context:** {context}
-            - **Query:** {query.lower()}
+            - **Query:** {query}
 
             First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot:
 
