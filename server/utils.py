@@ -1,3 +1,6 @@
+import re
+import unicodedata
+
 def clean_text_(text):
     # text = text.replace("\n", " ")  # Replace newlines with spaces
     text = re.sub(r'\s+', ' ', str(text))  # Remove extra spaces

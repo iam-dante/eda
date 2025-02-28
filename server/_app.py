@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import os 
 import chromadb
@@ -16,6 +16,8 @@ from utils import full_text_cleanup
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+
+app.secret_key = os.urandom(24)  # Set a secret key for the session
 
 load_dotenv()
 
@@ -64,45 +66,17 @@ def create_resources(file_path):
     lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
     return lang_sentences
 
-instance_id = str(uuid.uuid4())
-collection_name = f"documents_{instance_id}"
 
 def get_or_create_collection():
     """Ensure a single ChromaDB collection exists."""
     global collection_name
+    instance_id = session.get('instance_id')
+    collection_name = f"documents_{instance_id}"
     try:
         collection = chroma_client.get_collection(name=collection_name)
     except:
         collection = chroma_client.create_collection(name=collection_name)
     return collection
-
-# def save_to_chromadb(file):
-#     """Save file to ChromaDB."""
-#     if file.filename == '':
-#         return {'error': 'No file selected'}, 400
-
-#     if not file:
-#         return {'error': 'No file selected'}, 400
-
-#     if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
-#         return {'error': 'Invalid file type'}, 400
-
-#     if file.content_length > MAX_FILE_SIZE:
-#         return {'error': 'File too large'}, 400
-
-#     file_path = f'/tmp/{file.filename}'
-#     file.save(file_path)
-
-#     resources = create_resources(file_path)
-
-#     collection = chroma_client.get_or_create_collection(name=instance_id)
-
-#     collection.add(
-#     documents=resources,
-#     document_ids=[f"{i}" for i in range(len(resources))]
-#     )
-
-#     return {'message': 'File processed and uploaded successfully', 'collection': collection}, 200
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
@@ -117,39 +91,6 @@ def create_resources_from_bytes(pdf_stream):
     lang_cleaned_text = lang_clean_text(text)
     lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
     return lang_sentences
-
-# def save_to_chromadb(file):
-#     """Save file to ChromaDB."""
-#     if file.filename == '':
-#         return {'error': 'No file selected'}, 400
-
-#     if not file:
-#         return {'error': 'No file selected'}, 400
-
-#     if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
-#         return {'error': 'Invalid file type'}, 400
-
-#     if file.content_length > MAX_FILE_SIZE:
-#         return {'error': 'File too large'}, 400
-
-#     # Read file contents into memory
-#     file_bytes = file.read()
-    
-#     # Create a BytesIO object to work with PyMuPDF
-#     from io import BytesIO
-#     pdf_stream = BytesIO(file_bytes)
-    
-#     # Modify create_resources to accept bytes instead of file path
-#     resources = create_resources_from_bytes(pdf_stream)
-
-#     collection = chroma_client.get_or_create_collection(name=instance_id)
-
-#     collection.add(
-#         documents=resources,
-#         ids=[f"{i}" for i in range(len(resources))]
-#     )
-
-#     return {'message': 'File processed and uploaded successfully', 'collection': collection}, 200
 
 def save_to_chromadb(file):
     """Save file to ChromaDB."""
@@ -177,7 +118,7 @@ def save_to_chromadb(file):
         resources = create_resources_from_bytes(pdf_stream)
 
         # Get or create collection
-        collection = chroma_client.get_or_create_collection(name=instance_id)
+        collection = chroma_client.get_or_create_collection(name=collection_name)
 
         # Add documents to collection
         collection.add(
@@ -189,7 +130,7 @@ def save_to_chromadb(file):
         return {
             'message': 'File processed and uploaded successfully',
             'documents_processed': len(resources),
-            'collection_id': instance_id
+          
         }, 200
 
     except Exception as e:
@@ -204,6 +145,15 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
+
+    # Check if instance_id exists in session, if not create one
+    if 'instance_id' not in session:
+        session['instance_id'] = str(uuid.uuid4())
+    
+    instance_id = session['instance_id']
+    global collection_name
+    collection_name = f"documents_{instance_id}"
+
     response, status = save_to_chromadb(file)
     return jsonify(response), status
 
@@ -272,18 +222,15 @@ def search():
         if not user_input:
             return jsonify({"error": "Missing user input"}), 400
 
-        all_results = []
+        # all_results = []
         collection = get_or_create_collection()
-        collection_size = len(collection.get()['ids'])
-        n_results = min(5, collection_size) if collection_size > 0 else 1
-        print(n_results)
+        # collection_size = len(collection.get()['ids'])
+        # n_results = min(5, collection_size) if collection_size > 0 else 1
+        # print(n_results)
         
-        results = collection.query(query_texts=[user_input], n_results=n_results)
-        
-        if results.get('documents', [[]])[0]:
-            all_results.extend(results['documents'][0])
+        results = collection.query(query_texts=[user_input], n_results=4)
 
-        context = "\n".join(all_results) if all_results else ""
+        context = "\n".join(results['documents'][0]) if results['documents'][0] else ""
         answer = ask_ollama(user_input, context)
         # answer = llm_online(user_input, context)
         
@@ -295,4 +242,4 @@ def search():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
