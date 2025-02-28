@@ -1,31 +1,27 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
+import os 
 import chromadb
-import json
-import requests
-from PyPDF2 import PdfReader
-import uuid
-import atexit
-from datetime import datetime
-import spacy
-import re
-import fitz  # PyMuPDF for PDF processing
-import logging
 from dotenv import load_dotenv
-import subprocess
-import openai
+import re
+import uuid
+import unicodedata
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
+import requests
+import logging
+from utils import full_text_cleanup
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
+load_dotenv()
 
 # Allowed file types & max size
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-
-load_dotenv()
 
 CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
 SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
@@ -42,157 +38,6 @@ chroma_client = chromadb.HttpClient(
     }
 )
 
-# Load SpaCy model
-import subprocess
-
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
-
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-instance_id = str(uuid.uuid4())
-collection_name = f"documents_{instance_id}"
-
-# def get_or_create_collection():
-#     """Ensure a single ChromaDB collection exists."""
-#     global collection_name
-#     try:
-#         collection = chroma_client.get_collection(name=collection_name)
-#     except:
-#         collection = chroma_client.create_collection(name=collection_name)
-#     return collection
-
-# def extract_text_from_pdf(file_stream):
-#     """Extract text from a PDF file."""
-#     pdf_bytes = file_stream.read()
-#     with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-#         pages_text = [
-#             {"page_number": page_number + 1, "text": page.get_text()}
-#             for page_number, page in enumerate(doc)
-#         ]
-#     return pages_text
-
-# def process_uploaded_file(file):
-#     """Extract text from uploaded files."""
-#     try:
-#         if file.filename.lower().endswith('.pdf'):
-#             return extract_text_from_pdf(file)
-#         elif file.filename.lower().endswith('.txt'):
-#             text = file.read().decode('utf-8')
-#             return [{"page_number": 1, "text": text}]
-#         else:
-#             return None
-#     except Exception as e:
-#         logging.error(f"Error processing file: {e}")
-#         return None
-
-# def process_text(pages_text, slice_size=6):
-#     """Convert extracted text into structured chunks for ChromaDB."""
-#     long_chunks = []
-#     long_chunks_metadata = []
-
-#     def sentence_split(sentences_list, slice_size):
-#         return [sentences_list[i:i + slice_size] for i in range(0, len(sentences_list), slice_size)]
-
-#     for item in pages_text:
-#         try:
-#             if isinstance(item["text"], str):
-#                 doc = nlp(item["text"])
-#                 sentences = [str(sentence) for sentence in list(doc.sents)]
-#                 chunks = sentence_split(sentences, slice_size)
-
-#                 for chunk in chunks:
-#                     chunk_text = " ".join(chunk).replace("\xa0", "").strip()
-#                     chunk_text = re.sub(r'\.([A-Z])', r'. \1', chunk_text)
-
-#                     long_chunks.append(chunk_text)
-#                     long_chunks_metadata.append({"page_number": item["page_number"]})
-#             else:
-#                 raise TypeError("Item text is not a string")
-#         except Exception as e:
-#             logging.error(f"Error processing text: {e}")
-
-#     return long_chunks, long_chunks_metadata
-
-# def save_to_chromadb(file):
-#     """Process the file and store chunks in ChromaDB."""
-#     if file.filename == '':
-#         return {'error': 'No file selected'}, 400
-
-#     if not file.filename.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
-#         return {'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}, 400
-
-#     file_id = str(uuid.uuid4())
-#     pages_text = process_uploaded_file(file)
-
-#     if not pages_text:
-#         return {'error': 'Failed to process file'}, 500
-
-#     try:
-#         long_chunks, long_chunks_metadata = process_text(pages_text)
-#         logging.info(f"Number of long chunks: {len(long_chunks)}")
-#         collection = get_or_create_collection()
-
-#         if collection:
-#             collection.add(
-#                 documents=long_chunks,
-#                 ids=[f"{file_id}_{i}" for i in range(len(long_chunks))],
-#                 metadatas=[{**meta, "file_id": file_id} for meta in long_chunks_metadata]
-#             )
-#             return {'message': 'File processed and uploaded successfully', 'file_id': file_id}, 200
-#     except Exception as e:
-#         logging.error(f"Failed to process file: {e}")
-#         return {'error': f'Failed to process file: {str(e)}'}, 500
-
-#     return {'error': 'Failed to process file'}, 500
-import re
-import unicodedata
-
-def clean_text_(text):
-    # text = text.replace("\n", " ")  # Replace newlines with spaces
-    text = re.sub(r'\s+', ' ', str(text))  # Remove extra spaces
-    return text.strip()  # Trim leading and trailing spaces
-
-def remove_special_chars(text):
-    text = re.sub(r'[^a-zA-Z0-9.,!?\'" ]', '', text)  # Keep letters, numbers, and common punctuation
-    return text
-
-def fix_hyphenation(text):
-    return re.sub(r'(\w+)-\s+(\w+)', r'\1\2', text)  # Removes hyphenation across lines
-
-def normalize_unicode(text):
-    return unicodedata.normalize("NFKD", text)
-
-def remove_headers_footers(text):
-    lines = text.split("\n")
-    cleaned_lines = [line for line in lines if not re.match(r'(Page \d+|Confidential|Company Name)', line)]
-    return " ".join(cleaned_lines)
-
-def normalize_text(text):
-    return " ".join(text.lower().split())
-
-def full_text_cleanup(text):
-    """"
-    Takes in unclean text and return cleaned text by applying a series of cleaning functions.
-    
-    """
-    text = clean_text_(text)
-    text = fix_hyphenation(text)
-    text = remove_special_chars(text)
-    text = normalize_unicode(text)
-    text = remove_headers_footers(text)
-    text = normalize_text(text)
-    
-    return text
-
-from langchain.document_loaders import PyMuPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.text_splitter import NLTKTextSplitter
 
 def extract_text_langchain(pdf_path):
     loader = PyMuPDFLoader(pdf_path)
@@ -217,8 +62,140 @@ def create_resources(file_path):
     lang_text = extract_text_langchain(file_path)
     lang_cleaned_text = lang_clean_text(lang_text)
     lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+    return lang_sentences
 
-    return{'message': 'File processed and uploaded successfully', 'data':lang_sentences }, 200
+instance_id = str(uuid.uuid4())
+collection_name = f"documents_{instance_id}"
+
+def get_or_create_collection():
+    """Ensure a single ChromaDB collection exists."""
+    global collection_name
+    try:
+        collection = chroma_client.get_collection(name=collection_name)
+    except:
+        collection = chroma_client.create_collection(name=collection_name)
+    return collection
+
+# def save_to_chromadb(file):
+#     """Save file to ChromaDB."""
+#     if file.filename == '':
+#         return {'error': 'No file selected'}, 400
+
+#     if not file:
+#         return {'error': 'No file selected'}, 400
+
+#     if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
+#         return {'error': 'Invalid file type'}, 400
+
+#     if file.content_length > MAX_FILE_SIZE:
+#         return {'error': 'File too large'}, 400
+
+#     file_path = f'/tmp/{file.filename}'
+#     file.save(file_path)
+
+#     resources = create_resources(file_path)
+
+#     collection = chroma_client.get_or_create_collection(name=instance_id)
+
+#     collection.add(
+#     documents=resources,
+#     document_ids=[f"{i}" for i in range(len(resources))]
+#     )
+
+#     return {'message': 'File processed and uploaded successfully', 'collection': collection}, 200
+
+def create_resources_from_bytes(pdf_stream):
+    """Modified version of create_resources to work with BytesIO instead of file path"""
+    import fitz  # PyMuPDF
+    
+    doc = fitz.open(stream=pdf_stream)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    doc.close()
+    
+    lang_cleaned_text = lang_clean_text(text)
+    lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+    return lang_sentences
+
+# def save_to_chromadb(file):
+#     """Save file to ChromaDB."""
+#     if file.filename == '':
+#         return {'error': 'No file selected'}, 400
+
+#     if not file:
+#         return {'error': 'No file selected'}, 400
+
+#     if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
+#         return {'error': 'Invalid file type'}, 400
+
+#     if file.content_length > MAX_FILE_SIZE:
+#         return {'error': 'File too large'}, 400
+
+#     # Read file contents into memory
+#     file_bytes = file.read()
+    
+#     # Create a BytesIO object to work with PyMuPDF
+#     from io import BytesIO
+#     pdf_stream = BytesIO(file_bytes)
+    
+#     # Modify create_resources to accept bytes instead of file path
+#     resources = create_resources_from_bytes(pdf_stream)
+
+#     collection = chroma_client.get_or_create_collection(name=instance_id)
+
+#     collection.add(
+#         documents=resources,
+#         ids=[f"{i}" for i in range(len(resources))]
+#     )
+
+#     return {'message': 'File processed and uploaded successfully', 'collection': collection}, 200
+
+def save_to_chromadb(file):
+    """Save file to ChromaDB."""
+    try:
+        if file.filename == '':
+            return {'error': 'No file selected'}, 400
+
+        if not file:
+            return {'error': 'No file selected'}, 400
+
+        if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
+            return {'error': 'Invalid file type'}, 400
+
+        if file.content_length > MAX_FILE_SIZE:
+            return {'error': 'File too large'}, 400
+
+        # Read file contents into memory
+        file_bytes = file.read()
+        
+        # Create a BytesIO object to work with PyMuPDF
+        from io import BytesIO
+        pdf_stream = BytesIO(file_bytes)
+        
+        # Process the file and get resources
+        resources = create_resources_from_bytes(pdf_stream)
+
+        # Get or create collection
+        collection = chroma_client.get_or_create_collection(name=instance_id)
+
+        # Add documents to collection
+        collection.add(
+            documents=resources,
+            ids=[f"{i}" for i in range(len(resources))]
+        )
+
+        # Return JSON-serializable response
+        return {
+            'message': 'File processed and uploaded successfully',
+            'documents_processed': len(resources),
+            'collection_id': instance_id
+        }, 200
+
+    except Exception as e:
+        logging.error(f"Error in save_to_chromadb: {str(e)}")
+        return {'error': str(e)}, 500
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -227,21 +204,9 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    _, status = create_resources(file)
-    return jsonify(_), status
+    response, status = save_to_chromadb(file)
+    return jsonify(response), status
 
-# @app.route('/extract_text', methods=['POST'])
-# def extract_text():
-#     """Return extracted text before processing."""
-#     if 'file' not in request.files:
-#         return jsonify({'error': 'No file part in the request'}), 400
-
-#     file = request.files['file']
-#     pages_text = process_uploaded_file(file)
-    
-#     if pages_text:
-#         return jsonify({'text': pages_text}), 200
-#     return jsonify({'error': 'Failed to extract text'}), 500
 
 def ask_ollama(query, context=None):
     """Query OLLAMA model with extracted context."""
@@ -253,7 +218,7 @@ def ask_ollama(query, context=None):
 
             1. **Context Retrieval (Step 1):**
             - **Context:** {context}
-            - **Query:** {query}
+            - **Query:** {query.lower()}
 
             First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot:
 
@@ -296,41 +261,6 @@ def ask_ollama(query, context=None):
     except Exception as e:
         logging.error(f"Error querying OLLAMA: {e}")
         return "Error retrieving response"
-    
-def llm_online(query, context=None):
-    """Query OLLAMA model with extracted context."""
-
-    if context:
-        prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, try to use your general knowledge.  Do not mention the context in your response.
-        **Context:**
-        {context}
-
-        **Question:**
-        {query}
-
-        **Answer:**
-        """
-    else:
-        prompt = f"""
-        Please answer the following question:
-        {query}
-        """
-
-    client = openai.OpenAI(
-        api_key=SAMBANOVA_API_KEY,
-        base_url="https://api.sambanova.ai/v1",
-    )
-
-    response = client.chat.completions.create(
-        model="Meta-Llama-3.3-70B-Instruct",
-        messages=[{"role":"system","content":prompt}],
-        temperature=0.7,
-        top_p=0.1
-    )
-
-
-    return response.choices[0].message.content
-
 
 @app.route("/search", methods=["POST"])
 def search():
@@ -362,6 +292,7 @@ def search():
     except Exception as e:
         logging.error(f"Search failed: {e}")
         return jsonify({"error": f"Search failed: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run()
