@@ -17,7 +17,7 @@ from utils import full_text_cleanup
 app = Flask(__name__)
 CORS(app)
 
-app.secret_key = os.urandom(24)  # Set a secret key for the session
+# app.secret_key = os.urandom(24)  # Set a secret key for the session
 
 load_dotenv()
 
