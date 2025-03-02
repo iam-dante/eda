@@ -17,7 +17,7 @@ from utils import full_text_cleanup
 app = Flask(__name__)
 CORS(app)
 
-# app.secret_key = os.urandom(24)  # Set a secret key for the session
+app.secret_key = os.urandom(24)  # Set a secret key for the session
 
 load_dotenv()
 
@@ -69,32 +69,52 @@ def create_resources(file_path):
 
 def get_or_create_collection():
     """Ensure a single ChromaDB collection exists."""
-    global collection_name
-    instance_id = session.get('instance_id')
+    instance_id = session.get('current_collection_id')
+    if not instance_id:
+        instance_id = str(uuid.uuid4())
+        session['current_collection_id'] = instance_id
+    
     collection_name = f"documents_{instance_id}"
     try:
         collection = chroma_client.get_collection(name=collection_name)
     except:
         collection = chroma_client.create_collection(name=collection_name)
-    return collection
+    return collection, collection_name
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
     import fitz  # PyMuPDF
     
-    doc = fitz.open(stream=pdf_stream)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    doc.close()
-    
-    lang_cleaned_text = lang_clean_text(text)
-    lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
-    return lang_sentences
+    try:
+        doc = fitz.open(stream=pdf_stream)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        
+        if not text.strip():
+            logging.error("No text extracted from PDF")
+            return []
+        
+        lang_cleaned_text = lang_clean_text(text)
+        if not lang_cleaned_text:
+            logging.error("No text after cleaning")
+            return []
+            
+        lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+        if not lang_sentences:
+            logging.error("No sentences extracted")
+            return []
+            
+        return lang_sentences
+    except Exception as e:
+        logging.error(f"Error in create_resources_from_bytes: {str(e)}")
+        return []
 
 def save_to_chromadb(file):
     """Save file to ChromaDB."""
     try:
+        # Basic validations
         if file.filename == '':
             return {'error': 'No file selected'}, 400
 
@@ -107,6 +127,17 @@ def save_to_chromadb(file):
         if file.content_length > MAX_FILE_SIZE:
             return {'error': 'File too large'}, 400
 
+        # Create new collection for this upload
+        new_instance_id = str(uuid.uuid4())
+        session['current_collection_id'] = new_instance_id
+        new_collection_name = f"documents_{new_instance_id}"
+        
+        try:
+            collection = chroma_client.create_collection(name=new_collection_name)
+        except Exception as e:
+            logging.error(f"Error creating collection: {str(e)}")
+            return {'error': 'Failed to create new collection'}, 500
+
         # Read file contents into memory
         file_bytes = file.read()
         
@@ -116,22 +147,29 @@ def save_to_chromadb(file):
         
         # Process the file and get resources
         resources = create_resources_from_bytes(pdf_stream)
-
-        # Get or create collection
-        collection = chroma_client.get_or_create_collection(name=collection_name)
+        
+        if not resources:
+            return {'error': 'No valid text content could be extracted'}, 400
 
         # Add documents to collection
-        collection.add(
-            documents=resources,
-            ids=[f"{i}" for i in range(len(resources))]
-        )
-
-        # Return JSON-serializable response
-        return {
-            'message': 'File processed and uploaded successfully',
-            'documents_processed': len(resources),
-          
-        }, 200
+        try:
+            collection.add(
+                documents=resources,
+                ids=[f"{uuid.uuid4()}" for _ in range(len(resources))]
+            )
+            
+            # Store the collection info in session
+            session['current_collection_name'] = new_collection_name
+            
+            return {
+                'message': 'File processed and uploaded successfully',
+                'documents_processed': len(resources),
+                'collection_id': new_instance_id
+            }, 200
+            
+        except Exception as e:
+            logging.error(f"Error adding documents to collection: {str(e)}")
+            return {'error': 'Failed to store documents'}, 500
 
     except Exception as e:
         logging.error(f"Error in save_to_chromadb: {str(e)}")
@@ -145,60 +183,47 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-
-    # Check if instance_id exists in session, if not create one
-    if 'instance_id' not in session:
-        session['instance_id'] = str(uuid.uuid4())
-    
-    instance_id = session['instance_id']
-    global collection_name
-    collection_name = f"documents_{instance_id}"
-
     response, status = save_to_chromadb(file)
     return jsonify(response), status
 
 
-def ask_ollama(query, context=None):
+def ask_ollama(query, context=None, document=None):
     """Query OLLAMA model with extracted context."""
     grok_prompt = f"""
-        ### Prompt for RAG System
+            ### Prompt for RAG System
 
-            **Instruction:**
-            You are an AI designed to answer queries using a two-step process involving context retrieval and knowledge-based answering. Here's how you should proceed:
+            **Instruction:**  
+            You are an AI designed to answer queries using a three-step process involving context retrieval, document reference, and knowledge-based answering. Here's how you should proceed:
 
-            1. **Context Retrieval (Step 1):**
-            - **Context:** {context}
-            - **Query:** {query.lower()}
+            1. **Context Retrieval (Step 1):**  
+            - **Document:** {document}  
+            - **Context:** {context}  
+            - **Query:** {query.lower()}  
 
-            First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot:
+            First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot, proceed to use the entire document. Search for information in the document that can help answer the query. If you can answer using the document, do so. If you still cannot answer adequately, proceed to step 2.
 
-            2. **Knowledge-Based Answer (Step 2):**
-            - If the context does not provide enough information to answer the query accurately, or if the query is not adequately addressed by the context, use your pre-existing knowledge to answer the query. 
-            - Be clear that you are now using your knowledge by starting your response with "Based on my knowledge:".
+            2. **Knowledge-Based Answer (Step 2):**  
+            - If neither the context nor the document provides enough information to answer the query accurately, use your pre-existing knowledge to answer the query.
 
-            **Guidelines:**
-            - **Accuracy:** Prioritize accuracy. If the context does not provide a clear answer and your knowledge is uncertain or outdated, acknowledge this by saying, "I'm not certain about this, but based on my knowledge:".
-            - **Completeness:** If part of the query can be answered with context but not fully, use context for what you can and supplement with knowledge.
-            - **Citations:** When answering from context, if possible, reference or quote directly from the context by using quotation marks or by specifying where in the context the answer was found (e.g., "According to the context...").
-            - **Admit Limitations:** If neither the context nor your knowledge can provide an answer, admit this by saying, "I do not have enough information to answer this query adequately."
+            **Guidelines:**  
+            - **Accuracy:** Prioritize accuracy. If you are using your knowledge and are uncertain or the information might be outdated, you may include a disclaimer like "I'm not certain, but...".  
+            - **Completeness:** If part of the query can be answered with the context or document but not fully, use those sources for what you can and supplement with knowledge.  
+            - **Citations:** When possible, integrate information from the context or document seamlessly into your answer without explicitly stating the source, unless it is necessary for clarity or to provide a direct quote.  
+            - **Admit Limitations:** If you cannot provide an adequate answer, admit this by saying, "I do not have enough information to answer this query adequately."
 
-            **Example Response Formats:**
+            **Example Response Formats:**  
+            - "The boiling point of water at sea level is 100°C."  
+            - "The average adult human body contains approximately 60% water."  
+            - "The Eiffel Tower was completed in 1889 and was designed by Gustave Eiffel."  
+            - "I do not have enough information to answer this query adequately."
 
-            - **From Context:** "The context states that the boiling point of water at sea level is 100°C."
-            - **From Knowledge:** "Based on my knowledge, the average adult human body contains approximately 60% water."
-            - **Mixed:** "From the context, we learn that the Eiffel Tower was completed in 1889. Based on my knowledge, it was designed by Gustave Eiffel."
-            - **Admitting Limitation:** "I do not have enough information to answer this query adequately."
+            **Proceed:**  
+            Now, attempt to answer the query provided:  
 
-            **Proceed:**
-            Now, attempt to answer the query provided:
+            **Query:** {query}  
 
-            **Query:** {query}
-
-            Your answer should be just explain of your understanding of the question. Dont list steps or any other things. Just explain the concept. Dont say Based on my knowledge or Based on the provided context, on your answer
-            Just answer the question directly and in detail simple way
-            DONT MENTION ABOUT THE CONTEXT OR THE QUESTION IN YOUR ANSWER
-    
-    """
+            Your answer should be a direct, detailed, and simple explanation of the concept. Do not list steps or any other things. Do not mention the context, document, or question in your answer unless it is necessary for understanding. If you are uncertain about the information from your knowledge, you may include a disclaimer like "I'm not certain, but...".
+            """
 
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
@@ -222,17 +247,17 @@ def search():
         if not user_input:
             return jsonify({"error": "Missing user input"}), 400
 
-        # all_results = []
-        collection = get_or_create_collection()
-        # collection_size = len(collection.get()['ids'])
-        # n_results = min(5, collection_size) if collection_size > 0 else 1
-        # print(n_results)
+        # Get the current collection
+        collection, _ = get_or_create_collection()
         
+        if not collection:
+            return jsonify({"error": "No documents available. Please upload a file first."}), 400
+            
         results = collection.query(query_texts=[user_input], n_results=4)
+        documents = collection.get()['documents']
 
         context = "\n".join(results['documents'][0]) if results['documents'][0] else ""
-        answer = ask_ollama(user_input, context)
-        # answer = llm_online(user_input, context)
+        answer = ask_ollama(user_input, context, documents)
         
         return jsonify({"results": answer}), 200
 
