@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os 
 import chromadb
@@ -16,8 +16,6 @@ from utils import full_text_cleanup
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
-
-app.secret_key = os.urandom(24)  # Set a secret key for the session
 
 load_dotenv()
 
@@ -67,19 +65,27 @@ def create_resources(file_path):
     return lang_sentences
 
 
+# Global variable to store current collection info
+current_collection_id = None
+current_collection_name = None
+
 def get_or_create_collection():
     """Ensure a single ChromaDB collection exists."""
-    instance_id = session.get('current_collection_id')
-    if not instance_id:
-        instance_id = str(uuid.uuid4())
-        session['current_collection_id'] = instance_id
+    global current_collection_id, current_collection_name
     
-    collection_name = f"documents_{instance_id}"
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-    except:
-        collection = chroma_client.create_collection(name=collection_name)
-    return collection, collection_name
+    if not current_collection_id:
+        current_collection_id = str(uuid.uuid4())
+        current_collection_name = f"documents_{current_collection_id}"
+        collection = chroma_client.create_collection(name=current_collection_name)
+    else:
+        try:
+            collection = chroma_client.get_collection(name=current_collection_name)
+        except:
+            current_collection_id = str.uuid.uuid4()
+            current_collection_name = f"documents_{current_collection_id}"
+            collection = chroma_client.create_collection(name=current_collection_name)
+    
+    return collection, current_collection_name
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
@@ -118,22 +124,16 @@ def save_to_chromadb(file):
         if file.filename == '':
             return {'error': 'No file selected'}, 400
 
-        if not file:
-            return {'error': 'No file selected'}, 400
-
-        if file.filename.split('.')[-1].lower() not in ALLOWED_EXTENSIONS:
-            return {'error': 'Invalid file type'}, 400
-
-        if file.content_length > MAX_FILE_SIZE:
-            return {'error': 'File too large'}, 400
+        filename = file.filename
+        # ...existing validation code...
 
         # Create new collection for this upload
-        new_instance_id = str(uuid.uuid4())
-        session['current_collection_id'] = new_instance_id
-        new_collection_name = f"documents_{new_instance_id}"
+        global current_collection_id, current_collection_name
+        current_collection_id = str(uuid.uuid4())
+        current_collection_name = f"documents_{current_collection_id}"
         
         try:
-            collection = chroma_client.create_collection(name=new_collection_name)
+            collection = chroma_client.create_collection(name=current_collection_name)
         except Exception as e:
             logging.error(f"Error creating collection: {str(e)}")
             return {'error': 'Failed to create new collection'}, 500
@@ -158,13 +158,11 @@ def save_to_chromadb(file):
                 ids=[f"{uuid.uuid4()}" for _ in range(len(resources))]
             )
             
-            # Store the collection info in session
-            session['current_collection_name'] = new_collection_name
-            
             return {
                 'message': 'File processed and uploaded successfully',
                 'documents_processed': len(resources),
-                'collection_id': new_instance_id
+                'collection_id': current_collection_id,
+                'filename': filename
             }, 200
             
         except Exception as e:
@@ -209,20 +207,15 @@ def ask_ollama(query, context=None, document=None):
             - **Accuracy:** Prioritize accuracy. If you are using your knowledge and are uncertain or the information might be outdated, you may include a disclaimer like "I'm not certain, but...".  
             - **Completeness:** If part of the query can be answered with the context or document but not fully, use those sources for what you can and supplement with knowledge.  
             - **Citations:** When possible, integrate information from the context or document seamlessly into your answer without explicitly stating the source, unless it is necessary for clarity or to provide a direct quote.  
-            - **Admit Limitations:** If you cannot provide an adequate answer, admit this by saying, "I do not have enough information to answer this query adequately."
-
-            **Example Response Formats:**  
-            - "The boiling point of water at sea level is 100°C."  
-            - "The average adult human body contains approximately 60% water."  
-            - "The Eiffel Tower was completed in 1889 and was designed by Gustave Eiffel."  
-            - "I do not have enough information to answer this query adequately."
-
+            
             **Proceed:**  
             Now, attempt to answer the query provided:  
 
             **Query:** {query}  
 
             Your answer should be a direct, detailed, and simple explanation of the concept. Do not list steps or any other things. Do not mention the context, document, or question in your answer unless it is necessary for understanding. If you are uncertain about the information from your knowledge, you may include a disclaimer like "I'm not certain, but...".
+
+            DO NOT include "Based on the provided context and knowledge-based approach, I can attempt to answer the query."
             """
 
     url = "http://localhost:11434/api/generate"
