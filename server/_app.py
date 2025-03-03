@@ -12,6 +12,7 @@ from langchain.text_splitter import NLTKTextSplitter
 import requests
 import logging
 from utils import full_text_cleanup
+from groq import Groq
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -25,6 +26,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
 SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
 
 
 # Initialize ChromaDB client
@@ -184,6 +186,49 @@ def upload_file():
     response, status = save_to_chromadb(file)
     return jsonify(response), status
 
+def ask_groq(query, context=None, document=None):
+    grok_prompt = f"""
+            ### Prompt for RAG System
+
+            **Instruction:**  
+            You are an AI designed to answer queries using a three-step process involving context retrieval, document reference, and knowledge-based answering. Here's how you should proceed:
+
+            1. **Context Retrieval (Step 1):**  
+            - **Document:** {document}  
+            - **Context:** {context}  
+            - **Query:** {query.lower()}  
+
+            First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot, proceed to use the entire document. Search for information in the document that can help answer the query. If you can answer using the document, do so. If you still cannot answer adequately, proceed to step 2.
+
+            2. **Knowledge-Based Answer (Step 2):**  
+            - If neither the context nor the document provides enough information to answer the query accurately, use your pre-existing knowledge to answer the query.
+
+            **Guidelines:**  
+            - **Accuracy:** Prioritize accuracy. If you are using your knowledge and are uncertain or the information might be outdated, you may include a disclaimer like "I'm not certain, but...".  
+            - **Completeness:** If part of the query can be answered with the context or document but not fully, use those sources for what you can and supplement with knowledge.  
+            - **Citations:** When possible, integrate information from the context or document seamlessly into your answer without explicitly stating the source, unless it is necessary for clarity or to provide a direct quote.  
+            
+            **Proceed:**  
+            Now, attempt to answer the query provided:  
+
+            **Query:** {query}  
+
+            Your answer should be a direct, detailed, and simple explanation of the concept. Do not list steps or any other things. Do not mention the context, document, or question in your answer unless it is necessary for understanding. If you are uncertain about the information from your knowledge, you may include a disclaimer like "I'm not certain, but...".
+
+            DO NOT include "Based on the provided context and knowledge-based approach, I can attempt to answer the query."
+            """
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": grok_prompt,
+            }
+        ],
+        model="llama-3.3-70b-versatile",
+    )
+
+    return chat_completion.choices[0].message.content
 
 def ask_ollama(query, context=None, document=None):
     """Query OLLAMA model with extracted context."""
@@ -250,7 +295,7 @@ def search():
         documents = collection.get()['documents']
 
         context = "\n".join(results['documents'][0]) if results['documents'][0] else ""
-        answer = ask_ollama(user_input, context, documents)
+        answer = ask_groq(user_input, context, documents)
         
         return jsonify({"results": answer}), 200
 
