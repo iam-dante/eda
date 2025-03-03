@@ -14,9 +14,12 @@ import logging
 from utils import full_text_cleanup
 from groq import Groq
 import nltk
+import fitz
 
 nltk.download('punkt')
-
+# On server 
+nltk.data.path.append('/opt/render/nltk_data')
+nltk.download('punkt', download_dir='/opt/render/nltk_data')
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -95,7 +98,6 @@ def get_or_create_collection():
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
-    import fitz  # PyMuPDF
     
     try:
         doc = fitz.open(stream=pdf_stream)
