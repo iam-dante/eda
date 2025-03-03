@@ -8,3 +8,7 @@ spacy
 pymupdf  # This is the package name for fitz (PyMuPDF)
 gunicorn
 openai
+groq
+langchain
+langchain-community
+nltk

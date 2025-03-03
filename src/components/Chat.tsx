@@ -50,7 +50,7 @@ export default function Chat({ chatId }: { chatId: string }) {
       setAttachment(null);
 
       try {
-        const response = await fetch("http://127.0.0.1:5000/search", {
+        const response = await fetch("https://web-rag.onrender.com/search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -125,7 +125,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:5000/upload",
+          "https://web-rag.onrender.com/upload",
           formData,
           {
             headers: {
@@ -160,16 +160,21 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   return (
     <div key={chatId} className="h-screen">
-      <div className="h-[90%] overflow-y-auto  py-8 px-64">
-        <div className="space-y-2 flex flex-col min-h-full  w-full">
+      <div className="h-[90%] overflow-y-auto py-8 px-64">
+        <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
           {messages.map((message) => (
-            <div key={message.id} className="grid justify-items-stretch ">
+            <div key={message.id} className="grid justify-items-stretch">
               <div
-                className={`max-w-[70%] px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium ${
+                className={`px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
                   message.sender === "user"
-                    ? "bg-gray-200 justify-self-end"
+                    ? "bg-gray-200 justify-self-end max-w-[70%]"
                     : "max-w-[90%] text-[17px] space-y-2"
                 }`}
+                style={{
+                  overflowWrap: "break-word",
+                  wordWrap: "break-word",
+                  hyphens: "auto",
+                }}
               >
                 {message.sender === "ai" && (
                   <div>
