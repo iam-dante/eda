@@ -30,11 +30,10 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  },[messages]);
+  }, [messages]);
 
   const production_url = "https://web-rag.onrender.com";
   const local_url = "http://127.0.0.1:5000";
-
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
