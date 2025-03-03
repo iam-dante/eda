@@ -13,6 +13,10 @@ import requests
 import logging
 from utils import full_text_cleanup
 from groq import Groq
+import nltk
+
+nltk.download('punkt')
+
 
 # Initialize Flask app
 app = Flask(__name__)
