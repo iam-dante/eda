@@ -16,10 +16,10 @@ from groq import Groq
 import nltk
 import fitz
 
-nltk.download('punkt_tab')
-# On server 
-nltk.data.path.append('/opt/render/nltk_data')
-nltk.download('punkt_tab', download_dir='/opt/render/nltk_data')
+# nltk.download('punkt_tab')
+# # On server 
+# nltk.data.path.append('/opt/render/nltk_data')
+# nltk.download('punkt_tab', download_dir='/opt/render/nltk_data')
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -301,7 +301,7 @@ def search():
         documents = collection.get()['documents']
 
         context = "\n".join(results['documents'][0]) if results['documents'][0] else ""
-        answer = ask_groq(user_input, context, documents)
+        answer = ask_ollama(user_input, context, documents)
         
         return jsonify({"results": answer}), 200
 

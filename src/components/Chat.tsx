@@ -50,7 +50,7 @@ export default function Chat({ chatId }: { chatId: string }) {
       setAttachment(null);
 
       try {
-        const response = await fetch("https://web-rag.onrender.com/search", {
+        const response = await fetch("http://127.0.0.1:5000/search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -125,7 +125,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "https://web-rag.onrender.com/upload",
+          "http://127.0.0.1:5000/upload",
           formData,
           {
             headers: {
