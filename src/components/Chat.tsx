@@ -7,6 +7,7 @@ import MarkdownRenderer from "./MarkdownRenderer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import { Tab } from "@headlessui/react"; // Update this line
 
 interface Message {
   id: string;
@@ -160,134 +161,180 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   return (
     <div key={chatId} className="h-screen">
-      <div className="h-[90%] overflow-y-auto py-8 px-64">
-        <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
-          {messages.map((message) => (
-            <div key={message.id} className="grid justify-items-stretch">
-              <div
-                className={`px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
-                  message.sender === "user"
-                    ? "bg-gray-200 justify-self-end max-w-[70%]"
-                    : "max-w-[90%] text-[17px] space-y-2"
-                }`}
-                style={{
-                  overflowWrap: "break-word",
-                  wordWrap: "break-word",
-                  hyphens: "auto",
-                }}
-              >
-                {message.sender === "ai" && (
-                  <div>
-                    {" "}
-                    <div className="flex flex-col">
-                      {" "}
-                      <span>&#x2022;</span>{" "}
+      <Tab.Group as={"div"} className="flex flex-col h-full">
+        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-2 mx-64">
+          <Tab
+            className={({ selected }) =>
+              cn(
+                "w-full rounded-lg py-2.5 text-sm font-medium leading-5",
+                "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
+                selected
+                  ? "bg-white shadow text-blue-700"
+                  : "text-blue-100 hover:bg-white/[0.12] hover:text-white"
+              )
+            }
+          >
+            Tab 1
+          </Tab>
+          <Tab
+            className={({ selected }) =>
+              cn(
+                "w-full rounded-lg py-2.5 text-sm font-medium leading-5",
+                "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
+                selected
+                  ? "bg-white shadow text-blue-700"
+                  : "text-blue-100 hover:bg-white/[0.12] hover:text-white"
+              )
+            }
+          >
+            Tab 2
+          </Tab>
+        </Tab.List>
+        <Tab.Panels className="flex-1">
+          <Tab.Panel className="h-full">
+            <div className="h-full bg-yellow-300">
+              <div className="h-[90%] overflow-y-auto px-64">
+                <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className="grid justify-items-stretch"
+                    >
+                      <div
+                        className={`px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
+                          message.sender === "user"
+                            ? "bg-gray-200 justify-self-end max-w-[70%]"
+                            : "max-w-[90%] text-[17px] space-y-2"
+                        }`}
+                        style={{
+                          overflowWrap: "break-word",
+                          wordWrap: "break-word",
+                          hyphens: "auto",
+                        }}
+                      >
+                        {message.sender === "ai" && (
+                          <div>
+                            {" "}
+                            <div className="flex flex-col">
+                              {" "}
+                              <span>&#x2022;</span>{" "}
+                            </div>
+                          </div>
+                        )}
+
+                        <MarkdownRenderer content={message.content} />
+                        {message.attachment && (
+                          <div className="mt-2">
+                            <a
+                              href={message.attachment}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 underline"
+                            >
+                              View Attachment
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {isLoading && (
+                    <div className="flex">
+                      <Ellipsis className="h-8 w-8 text-black animate-pulse" />
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
+                </div>
+              </div>
+              <div className="h-[10%] py-4 px-64">
+                <form onSubmit={sendMessage} className="flex items-end w-full">
+                  <div className="w-full flex justify-center items-center">
+                    <div className="h-14 w-full bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
+                      <Input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        disabled={isLoading}
+                        onChange={handleFileChange}
+                        accept=".txt,.pdf,.doc,.docx"
+                      />
+                      <Input
+                        type="text"
+                        disabled={
+                          isLoading || (!isInitialUploadDone && !attachment)
+                        } // Modified this line
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder={
+                          isUploading
+                            ? "Uploading file..."
+                            : !isInitialUploadDone && !attachment
+                            ? "Upload a document to start a session..."
+                            : uploadedFileName
+                            ? `Working with: ${uploadedFileName}`
+                            : "Type your message..."
+                        }
+                        className={cn(
+                          "w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                          !isInitialUploadDone &&
+                            !attachment &&
+                            "cursor-not-allowed"
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mr-2"
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                        ) : (
+                          <Paperclip className="h-6 w-6 -rotate-45" />
+                        )}
+                      </button>
+                      <button
+                        type="submit"
+                        className={cn(
+                          "bg-black h-8 w-8 rounded-full flex justify-center items-center",
+                          !isInitialUploadDone &&
+                            !attachment &&
+                            "opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={
+                          isLoading || (!isInitialUploadDone && !attachment)
+                        }
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 text-white animate-spin" />
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 22 22"
+                            strokeWidth={3}
+                            stroke="currentColor"
+                            className="size-4 text-white"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
+                            />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </div>
-                )}
-
-                <MarkdownRenderer content={message.content} />
-                {message.attachment && (
-                  <div className="mt-2">
-                    <a
-                      href={message.attachment}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 underline"
-                    >
-                      View Attachment
-                    </a>
-                  </div>
-                )}
+                </form>
               </div>
             </div>
-          ))}
-
-          {isLoading && (
-            <div className="flex">
-              <Ellipsis className="h-8 w-8 text-black animate-pulse" />
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-      </div>
-      <div className=" h-[10%]  py-4 px-64">
-        <form onSubmit={sendMessage} className="flex items-end w-full">
-          <div className="w-full flex justify-center items-center">
-            <div className="h-14 w-full bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
-              <Input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                disabled={isLoading}
-                onChange={handleFileChange}
-                accept=".txt,.pdf,.doc,.docx"
-              />
-              <Input
-                type="text"
-                disabled={isLoading || (!isInitialUploadDone && !attachment)} // Modified this line
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  isUploading
-                    ? "Uploading file..."
-                    : !isInitialUploadDone && !attachment
-                    ? "Upload a document to start a session..."
-                    : uploadedFileName
-                    ? `Working with: ${uploadedFileName}`
-                    : "Type your message..."
-                }
-                className={cn(
-                  "w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0",
-                  !isInitialUploadDone && !attachment && "cursor-not-allowed"
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mr-2"
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                ) : (
-                  <Paperclip className="h-6 w-6 -rotate-45" />
-                )}
-              </button>
-              <button
-                type="submit"
-                className={cn(
-                  "bg-black h-8 w-8 rounded-full flex justify-center items-center",
-                  !isInitialUploadDone &&
-                    !attachment &&
-                    "opacity-50 cursor-not-allowed"
-                )}
-                disabled={isLoading || (!isInitialUploadDone && !attachment)}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 text-white animate-spin" />
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 22 22"
-                    strokeWidth={3}
-                    stroke="currentColor"
-                    className="size-4 text-white"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-      <Toaster />
+            <Toaster />
+          </Tab.Panel>
+          <Tab.Panel className="h-full">Content 2</Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 }
