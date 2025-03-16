@@ -113,12 +113,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
               fontSize: "0.75rem",
               padding: "0.75rem",
               margin: "0.5rem 0",
-              lineHeight: "1.2",
+              lineHeight: "1",
             }}
             codeTagProps={{
               style: {
                 fontSize: "0.75rem",
-                lineHeight: "1.2",
+                lineHeight: "1",
               },
             }}
             {...props}
@@ -127,7 +127,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
           </SyntaxHighlighter>
         </div>
       ) : (
-        <code className="bg-gray-100 rounded px-1 py-0.5 text-xs" {...props}>
+        <code className="bg-gray-100 rounded px-1 py-0.5 text-md font-jet" {...props}>
           {children}
         </code>
       );
@@ -136,7 +136,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
       <p className="text-sm leading-relaxed my-2">{children}</p>
     ),
     h1: ({ children }:any) => (
-      <h1 className="text-xl font-bold my-3">{children}</h1>
+      <h1 className="text-xl font-bold my-2">{children}</h1>
     ),
     h2: ({ children }:any) => (
       <h2 className="text-lg font-semibold my-2">{children}</h2>
