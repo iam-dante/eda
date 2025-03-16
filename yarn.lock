@@ -2,40 +2,48 @@
 # yarn lockfile v1
 
 
-"@ai-sdk/provider-utils@2.1.8":
-  version "2.1.8"
-  resolved "https://registry.npmjs.org/@ai-sdk/provider-utils/-/provider-utils-2.1.8.tgz"
-  integrity sha512-1j9niMUAFlCBdYRYJr1yoB5kwZcRFBVuBiL1hhrf0ONFNrDiJYA6F+gROOuP16NHhezMfTo60+GeeV1xprHFjg==
+"@ai-sdk/openai@^1.2.5":
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/openai/-/openai-1.2.5.tgz#26c2def7c091193677b0d49f201238fa407627c6"
+  integrity sha512-COK7LzspgQQh5Yq070xfDdVMvp8WX592rXRaMaYNNqu1xpzahxDcM24aF9xgKYWuYH0UMoOw4UmWGwGxr6ygIg==
   dependencies:
-    "@ai-sdk/provider" "1.0.7"
+    "@ai-sdk/provider" "1.0.11"
+    "@ai-sdk/provider-utils" "2.1.13"
+
+"@ai-sdk/provider-utils@2.1.13", "@ai-sdk/provider-utils@^2.0.0":
+  version "2.1.13"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/provider-utils/-/provider-utils-2.1.13.tgz#060700e5e8032820f297828fc0f47e81aa8ce978"
+  integrity sha512-kLjqsfOdONr6DGcGEntFYM1niXz1H05vyZNf9OAzK+KKKc64izyP4/q/9HX7W4+6g8hm6BnmKxu8vkr6FSOqDg==
+  dependencies:
+    "@ai-sdk/provider" "1.0.11"
     eventsource-parser "^3.0.0"
     nanoid "^3.3.8"
     secure-json-parse "^2.7.0"
 
-"@ai-sdk/provider@1.0.7":
-  version "1.0.7"
-  resolved "https://registry.npmjs.org/@ai-sdk/provider/-/provider-1.0.7.tgz"
-  integrity sha512-q1PJEZ0qD9rVR+8JFEd01/QM++csMT5UVwYXSN2u54BrVw/D8TZLTeg2FEfKK00DgAx0UtWd8XOhhwITP9BT5g==
+"@ai-sdk/provider@1.0.11", "@ai-sdk/provider@^1.0.0":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-1.0.11.tgz#c1141b622f6a72551719c106b613c2350c6a29e0"
+  integrity sha512-CPyImHGiT3svyfmvPvAFTianZzWFtm0qK82XjwlQIA1C3IQ2iku/PMQXi7aFyrX0TyMh3VTkJPB03tjU2VXVrw==
   dependencies:
     json-schema "^0.4.0"
 
-"@ai-sdk/react@1.1.16":
-  version "1.1.16"
-  resolved "https://registry.npmjs.org/@ai-sdk/react/-/react-1.1.16.tgz"
-  integrity sha512-4Jx1piCte2+YoDd6ZdwM0Mw29046edw7MMNICImCPv2s7sfwFwe4c1t8waA4PYRefuETmzheqjh80kafQYJf8g==
+"@ai-sdk/react@1.1.23", "@ai-sdk/react@^1.1.23":
+  version "1.1.23"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-1.1.23.tgz#889f760a961abaac8e813eb6cbf8091def5f8b9a"
+  integrity sha512-R+PG9ya0GLs6orzt+1MxmjrWFuZM0gVs+l8ihBr1u+42wwkVeojY4CAtQjW4nrfGTVbdJYkl5y+r/VKfjr42aQ==
   dependencies:
-    "@ai-sdk/provider-utils" "2.1.8"
-    "@ai-sdk/ui-utils" "1.1.14"
+    "@ai-sdk/provider-utils" "2.1.13"
+    "@ai-sdk/ui-utils" "1.1.19"
     swr "^2.2.5"
     throttleit "2.1.0"
 
-"@ai-sdk/ui-utils@1.1.14":
-  version "1.1.14"
-  resolved "https://registry.npmjs.org/@ai-sdk/ui-utils/-/ui-utils-1.1.14.tgz"
-  integrity sha512-JQXcnPRnDfeH1l503s/8+SxJdmgyUKC3QvKjOpTV6Z/LyRWJZrruBoZnVB1OrL9o/WHEguC+rD+p9udv281KzQ==
+"@ai-sdk/ui-utils@1.1.19":
+  version "1.1.19"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/ui-utils/-/ui-utils-1.1.19.tgz#66356a2d18f78ecfcfd792c3bb07bda493b1b346"
+  integrity sha512-rDHy2uxlPMt3jjS9L6mBrsfhEInZ5BVoWevmD13fsAt2s/XWy2OwwKmgmUQkdLlY4mn/eyeYAfDGK8+5CbOAgg==
   dependencies:
-    "@ai-sdk/provider" "1.0.7"
-    "@ai-sdk/provider-utils" "2.1.8"
+    "@ai-sdk/provider" "1.0.11"
+    "@ai-sdk/provider-utils" "2.1.13"
     zod-to-json-schema "^3.24.1"
 
 "@alloc/quick-lru@^5.2.0":
@@ -591,16 +599,17 @@ acorn@^8.9.0:
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.12.1.tgz"
   integrity sha512-tcpGyI9zbizT9JbV6oYE477V6mTlXvvi0T0G3SNIYE2apm/G5huBa1+K89VGeovbg+jycCrfhl3ADxErOuO6Jg==
 
-ai@^4.1.41:
-  version "4.1.41"
-  resolved "https://registry.npmjs.org/ai/-/ai-4.1.41.tgz"
-  integrity sha512-qQ5eVm5ivTij0/auLaoggfW3Y+IgWL0uNCCH79P8eUODeJTTqCRvB0B3iz9xl9b4uqOPcgZCVELgLfVODnCJ9g==
+ai@^4.1.61:
+  version "4.1.61"
+  resolved "https://registry.yarnpkg.com/ai/-/ai-4.1.61.tgz#1d9b9c415f765ed86d86518b068b0426d4401813"
+  integrity sha512-Y9SAyGJEeW23F6C7PSHZXYNEvbH2cqJm0rVW2AoeFaXFT13ttx8rAqs8wz2w466C1UB329yl5PXayFcHqofSEA==
   dependencies:
-    "@ai-sdk/provider" "1.0.7"
-    "@ai-sdk/provider-utils" "2.1.8"
-    "@ai-sdk/react" "1.1.16"
-    "@ai-sdk/ui-utils" "1.1.14"
+    "@ai-sdk/provider" "1.0.11"
+    "@ai-sdk/provider-utils" "2.1.13"
+    "@ai-sdk/react" "1.1.23"
+    "@ai-sdk/ui-utils" "1.1.19"
     "@opentelemetry/api" "1.9.0"
+    eventsource-parser "^3.0.0"
     jsondiffpatch "0.6.0"
 
 ajv@^6.12.4:
@@ -2903,6 +2912,15 @@ oidc-token-hash@^5.0.3:
   resolved "https://registry.npmjs.org/oidc-token-hash/-/oidc-token-hash-5.0.3.tgz"
   integrity sha512-IF4PcGgzAr6XXSff26Sk/+P4KZFJVuHAJZj3wgO3vX2bMdNVp/QXTP3P7CEm9V1IdG8lDLY3HhiqpsE/nOwpPw==
 
+ollama-ai-provider@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/ollama-ai-provider/-/ollama-ai-provider-1.2.0.tgz#b052c8ad96ef8048185a7ac01ee9351a0cedf0ce"
+  integrity sha512-jTNFruwe3O/ruJeppI/quoOUxG7NA6blG3ZyQj3lei4+NnJo7bi3eIRWqlVpRlu/mbzbFXeJSBuYQWF6pzGKww==
+  dependencies:
+    "@ai-sdk/provider" "^1.0.0"
+    "@ai-sdk/provider-utils" "^2.0.0"
+    partial-json "0.1.7"
+
 once@^1.3.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/once/-/once-1.4.0.tgz"
@@ -2977,6 +2995,11 @@ parse-entities@^4.0.0:
     is-alphanumerical "^2.0.0"
     is-decimal "^2.0.0"
     is-hexadecimal "^2.0.0"
+
+partial-json@0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/partial-json/-/partial-json-0.1.7.tgz#b735a89edb3e25f231a3c4caeaae71dc9f578605"
+  integrity sha512-Njv/59hHaokb/hRUjce3Hdv12wd60MtM9Z5Olmn+nehe0QDAsRtRbJPvJ0Z91TusF0SuZRIvnM+S4l6EIP8leA==
 
 path-exists@^4.0.0:
   version "4.0.0"
@@ -3461,6 +3484,7 @@ streamsearch@^1.1.0:
   integrity sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==
 
 "string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -4007,6 +4031,11 @@ zod-to-json-schema@^3.24.1:
   version "3.24.1"
   resolved "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.24.1.tgz"
   integrity sha512-3h08nf3Vw3Wl3PK+q3ow/lIil81IT2Oa7YpQyUUDsEWbXveMesdfK1xBd2RhCkynwZndAxixji/7SYJJowr62w==
+
+zod@^3.24.2:
+  version "3.24.2"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.24.2.tgz#8efa74126287c675e92f46871cfc8d15c34372b3"
+  integrity sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==
 
 zwitch@^2.0.0:
   version "2.0.4"
