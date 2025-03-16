@@ -46,8 +46,10 @@
 
 import { useChat } from "@ai-sdk/react";
 import { CodeBlock } from "../components/code-block";
-// import { NonMemoizedMarkdown } from "../components/markdown";
+
+import { NonMemoizedMarkdown } from "../components/markdown";
 import MarkdownRenderer from "../components/MarkdownRenderer";
+
 
 export default function Chat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -60,12 +62,14 @@ export default function Chat() {
             switch (part.type) {
               case "text":
                 return (
-                  // <MarkdownRenderer key={`${message.id}`}>
-                  //   {" "}
-                    // {part.text}
-                  // </MarkdownRenderer>
-                   <MarkdownRenderer content={part.text} />
-                    
+                  <MarkdownRenderer key={`${message.id}`}>
+                    {" "}
+
+                    {part.text}
+                  </MarkdownRenderer>
+                  
+                  // <CodeBlock key={message.id}>{part.text}</CodeBlock>
+
                 );
             }
           })}
@@ -83,3 +87,4 @@ export default function Chat() {
     </div>
   );
 }
+
