@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Tab } from "@headlessui/react"; // Update this line
 import { useChat } from "@ai-sdk/react";
+import { GenerateCards } from "./GenerateCards";
 
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
@@ -267,7 +268,10 @@ export default function Chat({ chatId }: { chatId: string }) {
             </div>
             <Toaster />
           </Tab.Panel>
-          <Tab.Panel className="h-full">Content 2</Tab.Panel>
+          <Tab.Panel className="h-full ">
+                        
+        <GenerateCards/>
+          </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
     </div>
