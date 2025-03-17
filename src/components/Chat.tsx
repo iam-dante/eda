@@ -8,6 +8,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Tab } from "@headlessui/react"; // Update this line
+import { v4 as uuidv4 } from "uuid";
+import { useChat } from "@ai-sdk/react";
+import { set } from "zod";
 
 interface Message {
   id: string;
@@ -19,15 +22,26 @@ interface Message {
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  // const [messages, setMessages] = useState<Message[]>([]);
+  // const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [collectionName, setCollectionName] = useState<string>(""); // new state
+  const [document, setDocument] = useState<string>(""); // new state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileID = uuidv4();
+
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    
+    body: {
+      fileid: fileID,
+      document: document,
+    },
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,75 +49,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   const production_url = "https://web-rag.onrender.com";
   const local_url = "http://127.0.0.1:5000";
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() || attachment) {
-      setIsLoading(true);
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        content: input.trim(),
-        sender: "user",
-        attachment: attachment ? URL.createObjectURL(attachment) : undefined,
-      };
-      setMessages([...messages, newMessage]);
-      setInput("");
-      setAttachment(null);
-
-      try {
-        const response = await fetch("http://127.0.0.1:5000/search", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ text: input }),
-        });
-
-        let data;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        } else {
-          const textResponse = await response.text();
-          throw new Error(`Invalid response format: ${textResponse}`);
-        }
-
-        if (response.ok) {
-          const aiResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            content:
-              data["results"] || "Sorry, I couldn't process that request.",
-            sender: "ai",
-          };
-          setMessages((prevMessages) => [...prevMessages, aiResponse]);
-        } else {
-          toast({
-            className: cn(
-              "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
-            ),
-            title: "Error",
-            description:
-              data.error || "An error occurred while processing your request.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error details:", error);
-        toast({
-          className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
-          title: "Error",
-          description:
-            error instanceof Error
-              ? `Failed to process request: ${error.message}`
-              : "An unexpected error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+  
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,6 +69,7 @@ export default function Chat({ chatId }: { chatId: string }) {
       setIsUploading(true); // Start upload loading
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("fileID", fileID);
 
       try {
         const response = await axios.post(
@@ -132,11 +79,17 @@ export default function Chat({ chatId }: { chatId: string }) {
             headers: {
               "Content-Type": "multipart/form-data",
             },
+            params: {
+              json: JSON.stringify({"fileID": fileID}), // Pass the JSON as a query parameter or another method
+            },
           }
         );
+        console.log(response);
         setAttachment(file);
         setIsInitialUploadDone(true);
         setUploadedFileName(file.name); // Store the filename
+        setCollectionName(fileID); // Store the collection name
+        setDocument(response.data.document); // Store the document name
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-green-700 text-white"
@@ -157,6 +110,25 @@ export default function Chat({ chatId }: { chatId: string }) {
         setIsUploading(false); // End upload loading
       }
     }
+  };
+
+  const customHandleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+    handleSubmit: (
+      event?: { preventDefault?: () => void },
+      chatRequestOptions?: ChatRequestOptions
+    ) => void,
+    input: string,
+    fileId: string
+  ) => {
+    e.preventDefault();
+
+    await handleSubmit(e, {
+      data: {
+        messages: input, // Pass the user's input message
+        fileid: fileId, // Pass the fileId as additional data
+      },
+    });
   };
 
   return (
@@ -195,7 +167,7 @@ export default function Chat({ chatId }: { chatId: string }) {
             <div className="h-full bg-yellow-300">
               <div className="h-[90%] overflow-y-auto px-64">
                 <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
-                  {messages.map((message) => (
+                  {/* {messages.map((message) => (
                     <div
                       key={message.id}
                       className="grid justify-items-stretch"
@@ -237,6 +209,20 @@ export default function Chat({ chatId }: { chatId: string }) {
                         )}
                       </div>
                     </div>
+                  ))} */}
+
+                  {messages.map((message) => (
+                    <div key={message.id} className="whitespace-pre-wrap">
+                      {message.role === "user" ? "User: " : "AI: "}
+                      {message.parts.map((part, i) => {
+                        switch (part.type) {
+                          case "text":
+                            return (
+                              <div key={`${message.id}-${i}`}>{part.text}</div>
+                            );
+                        }
+                      })}
+                    </div>
                   ))}
 
                   {isLoading && (
@@ -248,7 +234,7 @@ export default function Chat({ chatId }: { chatId: string }) {
                 </div>
               </div>
               <div className="h-[10%] py-4 px-64">
-                <form onSubmit={sendMessage} className="flex items-end w-full">
+                <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
                     <div className="h-14 w-full bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
                       <Input
@@ -259,13 +245,13 @@ export default function Chat({ chatId }: { chatId: string }) {
                         onChange={handleFileChange}
                         accept=".txt,.pdf,.doc,.docx"
                       />
-                      <Input
+                      <input
                         type="text"
                         disabled={
                           isLoading || (!isInitialUploadDone && !attachment)
                         } // Modified this line
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={handleInputChange}
                         placeholder={
                           isUploading
                             ? "Uploading file..."

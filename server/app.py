@@ -75,25 +75,13 @@ def create_resources(file_path):
 
 
 # Global variable to store current collection info
-current_collection_id = None
 current_collection_name = None
 
 def get_or_create_collection():
-    """Ensure a single ChromaDB collection exists."""
-    global current_collection_id, current_collection_name
     
-    if not current_collection_id:
-        current_collection_id = str(uuid.uuid4())
-        current_collection_name = f"documents_{current_collection_id}"
-        collection = chroma_client.create_collection(name=current_collection_name)
-    else:
-        try:
-            collection = chroma_client.get_collection(name=current_collection_name)
-        except:
-            current_collection_id = str.uuid.uuid4()
-            current_collection_name = f"documents_{current_collection_id}"
-            collection = chroma_client.create_collection(name=current_collection_name)
-    
+    collection = chroma_client.create_collection(name=current_collection_name)
+    current_collection_name = current_collection_name
+
     return collection, current_collection_name
 
 def create_resources_from_bytes(pdf_stream):
@@ -125,7 +113,7 @@ def create_resources_from_bytes(pdf_stream):
         logging.error(f"Error in create_resources_from_bytes: {str(e)}")
         return []
 
-def save_to_chromadb(file):
+def save_to_chromadb(file, fileID):
     """Save file to ChromaDB."""
     try:
         # Basic validations
@@ -136,9 +124,8 @@ def save_to_chromadb(file):
         # ...existing validation code...
 
         # Create new collection for this upload
-        global current_collection_id, current_collection_name
-        current_collection_id = str(uuid.uuid4())
-        current_collection_name = f"documents_{current_collection_id}"
+        global current_collection_name
+        current_collection_name = f"doc_{fileID}"
         
         try:
             collection = chroma_client.create_collection(name=current_collection_name)
@@ -155,6 +142,7 @@ def save_to_chromadb(file):
         
         # Process the file and get resources
         resources = create_resources_from_bytes(pdf_stream)
+        document = " ".join(resources)
         
         if not resources:
             return {'error': 'No valid text content could be extracted'}, 400
@@ -169,8 +157,9 @@ def save_to_chromadb(file):
             return {
                 'message': 'File processed and uploaded successfully',
                 'documents_processed': len(resources),
-                'collection_id': current_collection_id,
-                'filename': filename
+                'collection_id': current_collection_name,
+                'filename': filename,
+                "document":document
             }, 200
             
         except Exception as e:
@@ -189,7 +178,10 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    response, status = save_to_chromadb(file)
+    fileID = request.form.get('fileID')
+    # fileID = "DNIURGNAJKRJGNRIAU"
+
+    response, status = save_to_chromadb(file, fileID)
     return jsonify(response), status
 
 def ask_groq(query, context=None, document=None):

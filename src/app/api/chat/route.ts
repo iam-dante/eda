@@ -1,31 +1,83 @@
 import { streamText } from "ai";
 import { createOllama } from "ollama-ai-provider";
+import { ChromaClient } from "chromadb";
+import { DefaultEmbeddingFunction } from "chromadb";
 
-// Initialize Ollama client with correct property names
+// Set runtime to nodejs for native modules
+export const runtime = "nodejs";
+
+const defaultEF = new DefaultEmbeddingFunction();
+const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
+
+// Initialize Ollama client
 const ollamaClient = createOllama({
   baseUrl: "http://localhost:11434/api/generate",
   headers: { "Content-Type": "application/json" },
 });
 
-// Initialize model handler (assumes createOllama returns a function)
+// Initialize ChromaDB client
+// const client = new ChromaClient({
+//   path: "https://api.trychroma.com:8000",
+//   auth: {
+//     provider: "token",
+//     credentials: CHROMADB_API_TOKEN,
+//     tokenHeaderType: "X_CHROMA_TOKEN",
+//   },
+//   tenant: "c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed",
+//   database: "rag-0a14d70f",
+// });
+
+// Initialize model handler
 const model = ollamaClient("llama3.2");
 
-// Allow streaming responses up to 30 seconds
+// Allow streaming responses up to 100 seconds
 export const maxDuration = 100;
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, fileid, document } = await req.json();
+
+    // Get the last user message (assuming messages is an array of message objects)
+    const lastUserMessage = Array.isArray(messages)
+      ? messages.filter((m) => m.role === "user").pop()?.content || ""
+      : messages;
+
+    console.log("Messages:", messages);
+
+    // Get collection and query
+    // const collection = await client.getCollection({
+    //   name: `doc_${fileid}`,
+    //   embeddingFunction: defaultEF,
+    // });
+
+    // // Query the collection
+    // const queryResults = await collection.query({
+    //   queryTexts: [lastUserMessage], // Use the user's last message as query
+    //   nResults: 4,
+    // });
+
+    // Construct the prompt with proper template literals
+    const prompt = `
+    Using this information, I can help you with the following:
+    document: ${document}
+    Answer this query: ${messages}
+    `;
+
+    // Stream the response
     const result = streamText({
       model,
-      messages,
+      prompt,
     });
+
     return result.toDataStreamResponse();
   } catch (error) {
     console.error("Chat API error:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to process chat request" }),
-      { status: 500 }
+      JSON.stringify({
+        error: "Failed to process chat request",
+        details: error.message,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
