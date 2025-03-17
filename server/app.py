@@ -1,34 +1,39 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
+import os 
 import chromadb
-import json
-import requests
-from PyPDF2 import PdfReader
-import uuid
-import atexit
-from datetime import datetime
-import spacy
-import re
-import fitz  # PyMuPDF for PDF processing
-import logging
 from dotenv import load_dotenv
-import subprocess
-import openai
+import re
+import uuid
+import unicodedata
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
+import requests
+import logging
+from utils import full_text_cleanup
+from groq import Groq
+import nltk
+import fitz
+
+# nltk.download('punkt_tab')
+# # On server 
+# nltk.data.path.append('/opt/render/nltk_data')
+# nltk.download('punkt_tab', download_dir='/opt/render/nltk_data')
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
+load_dotenv()
 
 # Allowed file types & max size
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-load_dotenv()
-
 CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
 SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
 
 
 # Initialize ChromaDB client
@@ -42,114 +47,140 @@ chroma_client = chromadb.HttpClient(
     }
 )
 
-# Load SpaCy model
-import subprocess
 
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
+def extract_text_langchain(pdf_path):
+    loader = PyMuPDFLoader(pdf_path)
+    documents = loader.load()
+    return "\n".join([doc.page_content for doc in documents])
 
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+def lang_clean_text(text):
+    # text = text.replace("\n", " ").strip()  
+    text = full_text_cleanup(text)
+    text_splitter = CharacterTextSplitter(chunk_size=100, chunk_overlap=20)
+    return text_splitter.split_text(text)
 
-instance_id = str(uuid.uuid4())
-collection_name = f"documents_{instance_id}"
+def split_text_into_sentences(text):
+    text_splitter = NLTKTextSplitter()
+    sentences = text_splitter.split_text(text)
+    cleaned_sentences = [sentence.replace("\n", " ") for sentence in sentences]
+    return cleaned_sentences
+
+
+def create_resources(file_path):
+    lang_text = extract_text_langchain(file_path)
+    lang_cleaned_text = lang_clean_text(lang_text)
+    lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+    return lang_sentences
+
+
+# Global variable to store current collection info
+current_collection_id = None
+current_collection_name = None
 
 def get_or_create_collection():
     """Ensure a single ChromaDB collection exists."""
-    global collection_name
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-    except:
-        collection = chroma_client.create_collection(name=collection_name)
-    return collection
-
-def extract_text_from_pdf(file_stream):
-    """Extract text from a PDF file."""
-    pdf_bytes = file_stream.read()
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-        pages_text = [
-            {"page_number": page_number + 1, "text": page.get_text()}
-            for page_number, page in enumerate(doc)
-        ]
-    return pages_text
-
-def process_uploaded_file(file):
-    """Extract text from uploaded files."""
-    try:
-        if file.filename.lower().endswith('.pdf'):
-            return extract_text_from_pdf(file)
-        elif file.filename.lower().endswith('.txt'):
-            text = file.read().decode('utf-8')
-            return [{"page_number": 1, "text": text}]
-        else:
-            return None
-    except Exception as e:
-        logging.error(f"Error processing file: {e}")
-        return None
-
-def process_text(pages_text, slice_size=6):
-    """Convert extracted text into structured chunks for ChromaDB."""
-    long_chunks = []
-    long_chunks_metadata = []
-
-    def sentence_split(sentences_list, slice_size):
-        return [sentences_list[i:i + slice_size] for i in range(0, len(sentences_list), slice_size)]
-
-    for item in pages_text:
+    global current_collection_id, current_collection_name
+    
+    if not current_collection_id:
+        current_collection_id = str(uuid.uuid4())
+        current_collection_name = f"documents_{current_collection_id}"
+        collection = chroma_client.create_collection(name=current_collection_name)
+    else:
         try:
-            if isinstance(item["text"], str):
-                doc = nlp(item["text"])
-                sentences = [str(sentence) for sentence in list(doc.sents)]
-                chunks = sentence_split(sentences, slice_size)
+            collection = chroma_client.get_collection(name=current_collection_name)
+        except:
+            current_collection_id = str.uuid.uuid4()
+            current_collection_name = f"documents_{current_collection_id}"
+            collection = chroma_client.create_collection(name=current_collection_name)
+    
+    return collection, current_collection_name
 
-                for chunk in chunks:
-                    chunk_text = " ".join(chunk).replace("\xa0", "").strip()
-                    chunk_text = re.sub(r'\.([A-Z])', r'. \1', chunk_text)
-
-                    long_chunks.append(chunk_text)
-                    long_chunks_metadata.append({"page_number": item["page_number"]})
-            else:
-                raise TypeError("Item text is not a string")
-        except Exception as e:
-            logging.error(f"Error processing text: {e}")
-
-    return long_chunks, long_chunks_metadata
+def create_resources_from_bytes(pdf_stream):
+    """Modified version of create_resources to work with BytesIO instead of file path"""
+    
+    try:
+        doc = fitz.open(stream=pdf_stream)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        
+        if not text.strip():
+            logging.error("No text extracted from PDF")
+            return []
+        
+        lang_cleaned_text = lang_clean_text(text)
+        if not lang_cleaned_text:
+            logging.error("No text after cleaning")
+            return []
+            
+        lang_sentences = split_text_into_sentences(lang_cleaned_text[0])
+        if not lang_sentences:
+            logging.error("No sentences extracted")
+            return []
+            
+        return lang_sentences
+    except Exception as e:
+        logging.error(f"Error in create_resources_from_bytes: {str(e)}")
+        return []
 
 def save_to_chromadb(file):
-    """Process the file and store chunks in ChromaDB."""
-    if file.filename == '':
-        return {'error': 'No file selected'}, 400
-
-    if not file.filename.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
-        return {'error': f'File type not allowed. Allowed types: {ALLOWED_EXTENSIONS}'}, 400
-
-    file_id = str(uuid.uuid4())
-    pages_text = process_uploaded_file(file)
-
-    if not pages_text:
-        return {'error': 'Failed to process file'}, 500
-
+    """Save file to ChromaDB."""
     try:
-        long_chunks, long_chunks_metadata = process_text(pages_text)
-        logging.info(f"Number of long chunks: {len(long_chunks)}")
-        collection = get_or_create_collection()
+        # Basic validations
+        if file.filename == '':
+            return {'error': 'No file selected'}, 400
 
-        if collection:
+        filename = file.filename
+        # ...existing validation code...
+
+        # Create new collection for this upload
+        global current_collection_id, current_collection_name
+        current_collection_id = str(uuid.uuid4())
+        current_collection_name = f"documents_{current_collection_id}"
+        
+        try:
+            collection = chroma_client.create_collection(name=current_collection_name)
+        except Exception as e:
+            logging.error(f"Error creating collection: {str(e)}")
+            return {'error': 'Failed to create new collection'}, 500
+
+        # Read file contents into memory
+        file_bytes = file.read()
+        
+        # Create a BytesIO object to work with PyMuPDF
+        from io import BytesIO
+        pdf_stream = BytesIO(file_bytes)
+        
+        # Process the file and get resources
+        resources = create_resources_from_bytes(pdf_stream)
+        
+        if not resources:
+            return {'error': 'No valid text content could be extracted'}, 400
+
+        # Add documents to collection
+        try:
             collection.add(
-                documents=long_chunks,
-                ids=[f"{file_id}_{i}" for i in range(len(long_chunks))],
-                metadatas=[{**meta, "file_id": file_id} for meta in long_chunks_metadata]
+                documents=resources,
+                ids=[f"{uuid.uuid4()}" for _ in range(len(resources))]
             )
-            return {'message': 'File processed and uploaded successfully', 'file_id': file_id}, 200
-    except Exception as e:
-        logging.error(f"Failed to process file: {e}")
-        return {'error': f'Failed to process file: {str(e)}'}, 500
+            
+            return {
+                'message': 'File processed and uploaded successfully',
+                'documents_processed': len(resources),
+                'collection_id': current_collection_id,
+                'filename': filename
+            }, 200
+            
+        except Exception as e:
+            logging.error(f"Error adding documents to collection: {str(e)}")
+            return {'error': 'Failed to store documents'}, 500
 
-    return {'error': 'Failed to process file'}, 500
+    except Exception as e:
+        logging.error(f"Error in save_to_chromadb: {str(e)}")
+        return {'error': str(e)}, 500
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -161,44 +192,86 @@ def upload_file():
     response, status = save_to_chromadb(file)
     return jsonify(response), status
 
-@app.route('/extract_text', methods=['POST'])
-def extract_text():
-    """Return extracted text before processing."""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part in the request'}), 400
+def ask_groq(query, context=None, document=None):
+    grok_prompt = f"""
+            ### Prompt for RAG System
 
-    file = request.files['file']
-    pages_text = process_uploaded_file(file)
-    
-    if pages_text:
-        return jsonify({'text': pages_text}), 200
-    return jsonify({'error': 'Failed to extract text'}), 500
+            **Instruction:**  
+            You are an AI designed to answer queries using a three-step process involving context retrieval, document reference, and knowledge-based answering. Here's how you should proceed:
 
-def ask_ollama(query, context=None):
-    """Query OLLAMA model with extracted context."""
-    prompt = f"""
-            You are an advanced Retrieval-Augmented Generation (RAG) system designed to provide highly accurate and contextually relevant responses. Use *only* the information provided in the context below to generate your answer. Do not use any prior knowledge or external sources. If the context does not contain enough information to answer the question, explicitly state: "I cannot answer this question based on the provided information."
+            1. **Context Retrieval (Step 1):**  
+            - **Document:** {document}  
+            - **Context:** {context}  
+            - **Query:** {query.lower()}  
 
-            ## Instructions:
-            - Analyze the retrieved context carefully to extract the most relevant details.
-            - Ensure that your answer is comprehensive, well-structured, and directly addresses the user's question.
-            - If multiple pieces of evidence exist in the context, synthesize them for a cohesive response.
-            - If the context is unclear, ambiguous, or conflicting, acknowledge this uncertainty in your response.
-            - Do not assume or infer facts beyond what is stated in the provided context.
+            First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot, proceed to use the entire document. Search for information in the document that can help answer the query. If you can answer using the document, do so. If you still cannot answer adequately, proceed to step 2.
 
-            ## Context:
-            {context}
+            2. **Knowledge-Based Answer (Step 2):**  
+            - If neither the context nor the document provides enough information to answer the query accurately, use your pre-existing knowledge to answer the query.
 
-            ## Question:
-            {query}
+            **Guidelines:**  
+            - **Accuracy:** Prioritize accuracy. If you are using your knowledge and are uncertain or the information might be outdated, you may include a disclaimer like "I'm not certain, but...".  
+            - **Completeness:** If part of the query can be answered with the context or document but not fully, use those sources for what you can and supplement with knowledge.  
+            - **Citations:** When possible, integrate information from the context or document seamlessly into your answer without explicitly stating the source, unless it is necessary for clarity or to provide a direct quote.  
+            
+            **Proceed:**  
+            Now, attempt to answer the query provided:  
 
-            ## Answer:
+            **Query:** {query}  
+
+            Your answer should be a direct, detailed, and simple explanation of the concept. Do not list steps or any other things. Do not mention the context, document, or question in your answer unless it is necessary for understanding. If you are uncertain about the information from your knowledge, you may include a disclaimer like "I'm not certain, but...".
+
+            DO NOT include "Based on the provided context and knowledge-based approach, I can attempt to answer the query."
             """
 
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": grok_prompt,
+            }
+        ],
+        model="llama-3.3-70b-versatile",
+    )
+
+    return chat_completion.choices[0].message.content
+
+def ask_ollama(query, context=None, document=None):
+    """Query OLLAMA model with extracted context."""
+    grok_prompt = f"""
+            ### Prompt for RAG System
+
+            **Instruction:**  
+            You are an AI designed to answer queries using a three-step process involving context retrieval, document reference, and knowledge-based answering. Here's how you should proceed:
+
+            1. **Context Retrieval (Step 1):**  
+            - **Document:** {document}  
+            - **Context:** {context}  
+            - **Query:** {query.lower()}  
+
+            First, attempt to answer the query using the provided context. Look for relevant information within the context that directly relates to the query. If you can answer the query comprehensively using only this context, do so. If you cannot, proceed to use the entire document. Search for information in the document that can help answer the query. If you can answer using the document, do so. If you still cannot answer adequately, proceed to step 2.
+
+            2. **Knowledge-Based Answer (Step 2):**  
+            - If neither the context nor the document provides enough information to answer the query accurately, use your pre-existing knowledge to answer the query.
+
+            **Guidelines:**  
+            - **Accuracy:** Prioritize accuracy. If you are using your knowledge and are uncertain or the information might be outdated, you may include a disclaimer like "I'm not certain, but...".  
+            - **Completeness:** If part of the query can be answered with the context or document but not fully, use those sources for what you can and supplement with knowledge.  
+            - **Citations:** When possible, integrate information from the context or document seamlessly into your answer without explicitly stating the source, unless it is necessary for clarity or to provide a direct quote.  
+            
+            **Proceed:**  
+            Now, attempt to answer the query provided:  
+
+            **Query:** {query}  
+
+            Your answer should be a direct, detailed, and simple explanation of the concept. Do not list steps or any other things. Do not mention the context, document, or question in your answer unless it is necessary for understanding. If you are uncertain about the information from your knowledge, you may include a disclaimer like "I'm not certain, but...".
+
+            DO NOT include "Based on the provided context and knowledge-based approach, I can attempt to answer the query."
+            """
 
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
-    data = {"model": "llama3.2", "prompt": prompt if context else query, "stream": False}
+    data = {"model": "llama3.2", "prompt": grok_prompt, "stream": False}
 
     try:
         response = requests.post(url, headers=headers, json=data)
@@ -210,6 +283,7 @@ def ask_ollama(query, context=None):
     
 def llm_online(query, context=None):
     """Query OLLAMA model with extracted context."""
+
     if context:
         prompt = f"""You are an expert information retriever.  Answer the user's question using *only* the information provided in the context below.  If the context does not contain the answer, try to use your general knowledge.  Do not mention the context in your response.
         **Context:**
@@ -252,20 +326,17 @@ def search():
         if not user_input:
             return jsonify({"error": "Missing user input"}), 400
 
-        all_results = []
-        collection = get_or_create_collection()
-        collection_size = len(collection.get()['ids'])
-        n_results = min(5, collection_size) if collection_size > 0 else 1
-        print(n_results)
+        # Get the current collection
+        collection, _ = get_or_create_collection()
         
-        results = collection.query(query_texts=[user_input], n_results=n_results)
-        
-        if results.get('documents', [[]])[0]:
-            all_results.extend(results['documents'][0])
+        if not collection:
+            return jsonify({"error": "No documents available. Please upload a file first."}), 400
+            
+        results = collection.query(query_texts=[user_input], n_results=4)
+        documents = collection.get()['documents']
 
-        context = "\n".join(all_results) if all_results else ""
-        answer = ask_ollama(user_input, context)
-        # answer = llm_online(user_input, context)
+        context = "\n".join(results['documents'][0]) if results['documents'][0] else ""
+        answer = ask_ollama(user_input, context, documents)
         
         return jsonify({"results": answer}), 200
 
@@ -273,5 +344,6 @@ def search():
         logging.error(f"Search failed: {e}")
         return jsonify({"error": f"Search failed: {str(e)}"}), 500
 
+
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
