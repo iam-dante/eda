@@ -77,13 +77,14 @@ export const GenerateCards = () => {
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
           </div>
         ) : cards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto h-full">
 
             {cards.map((card, index) => (
               <FlashCard
                 key={index}
                 question={card.question}
                 answer={card.answer}
+                questionNo={index}
               />
             ))}
           </div>

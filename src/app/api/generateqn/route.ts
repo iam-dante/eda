@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     //   model: "llama3-70b-8192",
     // });
 
-    const prompt = `Generate 5 quiz questions with answers from the following text. 
+    const prompt = `Generate 10 quiz questions with answers from the following text. 
     ${text}
     Format the response as a JSON array of objects with 'question' and 'answer' properties. Example: [{"question": "What is...", "answer": "The answer is..."}]
     
