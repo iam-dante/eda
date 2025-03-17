@@ -58,10 +58,23 @@ export async function POST(req: Request) {
 
     // Construct the prompt with proper template literals
     const prompt = `
-    Using this information, I can help you with the following:
-    document: ${document}
-    Answer this query: ${messages}
-    `;
+You are an advanced Retrieval-Augmented Generation (RAG) system designed to provide accurate and concise answers based on retrieved documents. Use the following information to assist the user:
+
+**Retrieved Document:**  
+${document}
+
+**User Query:**  
+${lastUserMessage}
+
+**Instructions:**  
+1. Analyze the retrieved document and extract relevant information to address the user's query.  
+2. Provide a clear, concise, and accurate response based solely on the document content.  
+3. If the document lacks sufficient information to fully answer the query, state that explicitly and avoid speculation.  
+4. Use natural language to ensure the response is easy to understand.  
+
+**Response:**  
+[Generate your answer here based on the document and query]
+`;
 
     // Stream the response
     const result = streamText({

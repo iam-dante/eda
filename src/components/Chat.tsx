@@ -8,9 +8,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Tab } from "@headlessui/react"; // Update this line
-import { v4 as uuidv4 } from "uuid";
-import { useChat } from "@ai-sdk/react";
-import { set } from "zod";
 
 interface Message {
   id: string;
@@ -22,26 +19,15 @@ interface Message {
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  // const [messages, setMessages] = useState<Message[]>([]);
-  // const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
-  const [collectionName, setCollectionName] = useState<string>(""); // new state
-  const [document, setDocument] = useState<string>(""); // new state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const fileID = uuidv4();
-
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    
-    body: {
-      fileid: fileID,
-      document: document,
-    },
-  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,7 +35,75 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   const production_url = "https://web-rag.onrender.com";
   const local_url = "http://127.0.0.1:5000";
-  
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() || attachment) {
+      setIsLoading(true);
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        content: input.trim(),
+        sender: "user",
+        attachment: attachment ? URL.createObjectURL(attachment) : undefined,
+      };
+      setMessages([...messages, newMessage]);
+      setInput("");
+      setAttachment(null);
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ text: input }),
+        });
+
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const textResponse = await response.text();
+          throw new Error(`Invalid response format: ${textResponse}`);
+        }
+
+        if (response.ok) {
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content:
+              data["results"] || "Sorry, I couldn't process that request.",
+            sender: "ai",
+          };
+          setMessages((prevMessages) => [...prevMessages, aiResponse]);
+        } else {
+          toast({
+            className: cn(
+              "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
+            ),
+            title: "Error",
+            description:
+              data.error || "An error occurred while processing your request.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error details:", error);
+        toast({
+          className: cn("top-4 right-0 flex fixed md:max-w-[420px] md:right-4"),
+          title: "Error",
+          description:
+            error instanceof Error
+              ? `Failed to process request: ${error.message}`
+              : "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,7 +123,6 @@ export default function Chat({ chatId }: { chatId: string }) {
       setIsUploading(true); // Start upload loading
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("fileID", fileID);
 
       try {
         const response = await axios.post(
@@ -79,17 +132,11 @@ export default function Chat({ chatId }: { chatId: string }) {
             headers: {
               "Content-Type": "multipart/form-data",
             },
-            params: {
-              json: JSON.stringify({"fileID": fileID}), // Pass the JSON as a query parameter or another method
-            },
           }
         );
-        console.log(response);
         setAttachment(file);
         setIsInitialUploadDone(true);
         setUploadedFileName(file.name); // Store the filename
-        setCollectionName(fileID); // Store the collection name
-        setDocument(response.data.document); // Store the document name
         toast({
           className: cn(
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-green-700 text-white"
@@ -112,62 +159,43 @@ export default function Chat({ chatId }: { chatId: string }) {
     }
   };
 
-  const customHandleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-    handleSubmit: (
-      event?: { preventDefault?: () => void },
-      chatRequestOptions?: ChatRequestOptions
-    ) => void,
-    input: string,
-    fileId: string
-  ) => {
-    e.preventDefault();
-
-    await handleSubmit(e, {
-      data: {
-        messages: input, // Pass the user's input message
-        fileid: fileId, // Pass the fileId as additional data
-      },
-    });
-  };
-
   return (
-    <div key={chatId} className="h-screen">
-      <Tab.Group as={"div"} className="flex flex-col h-full">
-        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-2 mx-64">
+    <div key={chatId} className="h-screen py-4">
+      <Tab.Group as={"div"} className="flex flex-col h-full ">
+        <Tab.List className="flex space-x-1 rounded-md  p-2 mx-[40%] border-2 border-gray-500">
           <Tab
             className={({ selected }) =>
               cn(
-                "w-full rounded-lg py-2.5 text-sm font-medium leading-5",
-                "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
+                "w-full rounded-sm py-2.5 text-md font-semibold leading-5",
+                "ring-white ring-opacity-60 ring-offset-2  focus:outline-none",
                 selected
-                  ? "bg-white shadow text-blue-700"
-                  : "text-blue-100 hover:bg-white/[0.12] hover:text-white"
+                  ? "bg-orange-600 shadow text-white"
+                  : "text-black hover:bg-white/[0.12] hover:text-orange-600"
               )
             }
           >
-            Tab 1
+            <h1 className="font-jet text-md">Chat</h1>
           </Tab>
           <Tab
             className={({ selected }) =>
               cn(
-                "w-full rounded-lg py-2.5 text-sm font-medium leading-5",
-                "ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2",
+                "w-full rounded-sm py-2.5 text-md font-semibold leading-5",
+                "ring-white ring-opacity-60 ring-offset-2  focus:outline-none",
                 selected
-                  ? "bg-white shadow text-blue-700"
-                  : "text-blue-100 hover:bg-white/[0.12] hover:text-white"
+                  ? "bg-orange-600 shadow text-white"
+                  : "text-black hover:bg-white/[0.12] hover:text-orange-600"
               )
             }
           >
-            Tab 2
+            <h1 className="font-jet text-md">Create Question</h1>
           </Tab>
         </Tab.List>
         <Tab.Panels className="flex-1">
           <Tab.Panel className="h-full">
-            <div className="h-full bg-yellow-300">
-              <div className="h-[90%] overflow-y-auto px-64">
+            <div className="h-full bg-yellow-300 mt-2">
+              <div className="h-[85%] overflow-y-auto px-64">
                 <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
-                  {/* {messages.map((message) => (
+                  {messages.map((message) => (
                     <div
                       key={message.id}
                       className="grid justify-items-stretch"
@@ -209,20 +237,6 @@ export default function Chat({ chatId }: { chatId: string }) {
                         )}
                       </div>
                     </div>
-                  ))} */}
-
-                  {messages.map((message) => (
-                    <div key={message.id} className="whitespace-pre-wrap">
-                      {message.role === "user" ? "User: " : "AI: "}
-                      {message.parts.map((part, i) => {
-                        switch (part.type) {
-                          case "text":
-                            return (
-                              <div key={`${message.id}-${i}`}>{part.text}</div>
-                            );
-                        }
-                      })}
-                    </div>
                   ))}
 
                   {isLoading && (
@@ -233,84 +247,86 @@ export default function Chat({ chatId }: { chatId: string }) {
                   <div ref={bottomRef} />
                 </div>
               </div>
-              <div className="h-[10%] py-4 px-64">
-                <form onSubmit={handleSubmit} className="flex items-end w-full">
+              <div className="h-[15%] py-4 px-72">
+                <form onSubmit={sendMessage} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-14 w-full bg-white rounded-full pl-6 pr-3 flex items-center border-2 border-black justify-between">
-                      <Input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        disabled={isLoading}
-                        onChange={handleFileChange}
-                        accept=".txt,.pdf,.doc,.docx"
-                      />
-                      <input
-                        type="text"
-                        disabled={
-                          isLoading || (!isInitialUploadDone && !attachment)
-                        } // Modified this line
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder={
-                          isUploading
-                            ? "Uploading file..."
-                            : !isInitialUploadDone && !attachment
-                            ? "Upload a document to start a session..."
-                            : uploadedFileName
-                            ? `Working with: ${uploadedFileName}`
-                            : "Type your message..."
-                        }
-                        className={cn(
-                          "w-[94%] h-11 text-black font-sans font-medium focus:outline-none focus:ring-0 border-0",
-                          !isInitialUploadDone &&
-                            !attachment &&
-                            "cursor-not-allowed"
-                        )}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="mr-2"
-                        disabled={isUploading}
-                      >
-                        {isUploading ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                        ) : (
-                          <Paperclip className="h-6 w-6 -rotate-45" />
-                        )}
-                      </button>
-                      <button
-                        type="submit"
-                        className={cn(
-                          "bg-black h-8 w-8 rounded-full flex justify-center items-center",
-                          !isInitialUploadDone &&
-                            !attachment &&
-                            "opacity-50 cursor-not-allowed"
-                        )}
-                        disabled={
-                          isLoading || (!isInitialUploadDone && !attachment)
-                        }
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-4 w-4 text-white animate-spin" />
-                        ) : (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 22 22"
-                            strokeWidth={3}
-                            stroke="currentColor"
-                            className="size-4 text-white"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
-                            />
-                          </svg>
-                        )}
-                      </button>
+                    <div className="h-24 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
+                      <div className="flex items-center w-full">
+                        <Input
+                          type="text"
+                          disabled={
+                            isLoading || (!isInitialUploadDone && !attachment)
+                          } // Modified this line
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          placeholder={
+                            isUploading
+                              ? "Uploading file..."
+                              : !isInitialUploadDone && !attachment
+                              ? "Upload a document to start a session..."
+                              : uploadedFileName
+                              ? `Working with: ${uploadedFileName}`
+                              : "Type your message..."
+                          }
+                          className={cn(
+                            "w-full h-24 text-black border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                            !isInitialUploadDone &&
+                              !attachment &&
+                              "cursor-not-allowed"
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="mr-2"
+                          disabled={isUploading}
+                        >
+                          {isUploading ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                          ) : (
+                            <Paperclip className="h-6 w-6 -rotate-45" />
+                          )}
+                        </button>
+                        <button
+                          type="submit"
+                          className={cn(
+                            "bg-orange-600 h-9 w-9 rounded-full flex justify-center items-center",
+                            !isInitialUploadDone &&
+                              !attachment &&
+                              "cursor-not-allowed opacity-70"
+                          )}
+                          disabled={
+                            isLoading || (!isInitialUploadDone && !attachment)
+                          }
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 22 22"
+                              strokeWidth={3}
+                              stroke="currentColor"
+                              className="size-4 text-white"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                        <Input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          disabled={isLoading}
+                          onChange={handleFileChange}
+                          accept=".txt,.pdf,.doc,.docx"
+                        />
+                      </div>
                     </div>
                   </div>
                 </form>

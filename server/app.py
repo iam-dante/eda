@@ -78,11 +78,22 @@ def create_resources(file_path):
 current_collection_name = None
 
 def get_or_create_collection():
-    
-    collection = chroma_client.create_collection(name=current_collection_name)
-    current_collection_name = current_collection_name
-
-    return collection, current_collection_name
+    global current_collection_name
+    try:
+        # Try to get existing collection first
+        collection = chroma_client.get_collection(name=current_collection_name)
+        return collection, current_collection_name
+    except Exception:
+        # If collection doesn't exist, create it
+        try:
+            collection = chroma_client.create_collection(name=current_collection_name)
+            return collection, current_collection_name
+        except Exception as e:
+            if "UniqueConstraintError" in str(e):
+                # If we get a unique constraint error, try getting the collection again
+                collection = chroma_client.get_collection(name=current_collection_name)
+                return collection, current_collection_name
+            raise e
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
@@ -121,17 +132,16 @@ def save_to_chromadb(file, fileID):
             return {'error': 'No file selected'}, 400
 
         filename = file.filename
-        # ...existing validation code...
-
-        # Create new collection for this upload
+        
+        # Set collection name before getting/creating collection
         global current_collection_name
         current_collection_name = f"doc_{fileID}"
         
         try:
-            collection = chroma_client.create_collection(name=current_collection_name)
+            collection, _ = get_or_create_collection()
         except Exception as e:
-            logging.error(f"Error creating collection: {str(e)}")
-            return {'error': 'Failed to create new collection'}, 500
+            logging.error(f"Error getting/creating collection: {str(e)}")
+            return {'error': 'Failed to access collection'}, 500
 
         # Read file contents into memory
         file_bytes = file.read()
