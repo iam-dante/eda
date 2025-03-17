@@ -62,13 +62,13 @@ export default function Chat() {
             switch (part.type) {
               case "text":
                 return (
-                  <MarkdownRenderer key={`${message.id}`}>
-                    {" "}
+                  // <MarkdownRenderer key={`${message.id}`}>
+                  //   {" "}
 
-                    {part.text}
-                  </MarkdownRenderer>
+                  //   {part.text}
+                  // </MarkdownRenderer>
                   
-                  // <CodeBlock key={message.id}>{part.text}</CodeBlock>
+                  <CodeBlock key={message.id}>{part.text}</CodeBlock>
 
                 );
             }
