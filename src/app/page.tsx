@@ -1,136 +1,83 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <main className=" div-class min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-white to-gray-50 font-sans">
-      <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center space-y-6 sm:space-y-8">
-        {/* Badge */}
-        <div className="transform hover:scale-105 transition-transform">
-          <span className="px-4 py-1.5 text-center rounded-full text-xs sm:text-sm font-semibold bg-orange-50 text-orange-500 border-2 border-orange-500">
-            Introducing
-          </span>
-        </div>
-
-        {/* Title */}
-        <h1 className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight font-sans">
-          <span>AI </span>
-          <span className="text-orange-500">Powered </span>
-          <span>Learning Assistant</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-center text-sm sm:text-base md:text-lg text-gray-600 max-w-xl mx-auto px-4 font-sans">
-          For Document-Driven Interactive Q&A
-        </p>
-
-        {/* CTA Button */}
+    <main className="min-h-screen flex flex-col   p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-orange-50 to-white font-sans">
+      <div className=" w-full h-12 flex items-center px-8">
         <Link
-          href="/chat/new"
-          className="group relative inline-flex items-center justify-center mt-4"
+          href={"/"}
         >
-          <button
-            className="relative px-6 py-3 bg-black text-white text-sm sm:text-base font-medium rounded-lg
-            shadow-lg hover:bg-orange-500 transform hover:scale-105 transition-all duration-200 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 font-sans"
-          >
-            Start Session
-           
-          </button>
+          <h1 className="font-extrabold text-5xl text-orange-600 font-barriecito">Eda</h1>
         </Link>
+      </div>
+      <div className="flex items-center justify-center flex-1">
+        <div className="w-full max-w-5xl mx-auto flex flex-col items-center justify-center space-y-8 ">
+          {/* Logo and Title */}
+          <div className="flex flex-col items-center space-y-4">
+           
+
+            <span className="px-4 py-1.5 text-center rounded-full text-xs sm:text-sm font-semibold bg-orange-50 text-orange-500 border-2 border-orange-500">
+              Introducing
+            </span>
+            <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-gray-800">
+              Eda - Your AI Learning Assistant
+            </h1>
+            <p className="text-center text-lg sm:text-xl text-gray-600 max-w-2xl">
+              Unlock knowledge with Document-Driven Interactive Q&A
+            </p>
+          </div>
+
+          {/* Features Section */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Feature 1 */}
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+              <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                Instant Answers
+              </h2>
+              <p className="text-gray-600">
+                Get quick, accurate answers from your documents using AI.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+              <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                Document Upload
+              </h2>
+              <p className="text-gray-600">
+                Easily upload and analyze various document formats (PDF, TXT,
+                etc.).
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+              <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                Create Review Qns
+              </h2>
+              <p className="text-gray-600">
+               Generate question on a topic for a quick review and study
+              </p>
+            </div>
+          </section>
+
+          {/* CTA Button */}
+          <Link
+            href="/chat/new"
+            className="inline-flex items-center justify-center mt-4"
+          >
+            <button className="px-8 py-4 bg-orange-600 text-white text-lg font-medium rounded-lg shadow-lg hover:bg-orange-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500">
+              Start Learning Now
+            </button>
+          </Link>
+
+          {/* Footer */}
+          <footer className="absolute text-center text-gray-500 mt-12 bottom-7">
+            <p>&copy; {new Date().getFullYear()} Eda. All rights reserved.</p>
+          </footer>
+        </div>
       </div>
     </main>
   );
 }
-
-// "use client";
-
-// import { useChat } from "@ai-sdk/react";
-// import { CodeBlock } from "../components/code-block";
-
-// import { NonMemoizedMarkdown } from "../components/markdown";
-// import MarkdownRenderer from "../components/MarkdownRenderer";
-
-
-// export default function Chat() {
-//   const { messages, input, handleInputChange, handleSubmit } = useChat();
-//   return (
-//     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-//       {messages.map((message) => (
-//         <div key={message.id} className="whitespace-pre-wrap">
-//           {message.role === "user" ? "User: " : "AI: "}
-//           {message.parts.map((part) => {
-//             switch (part.type) {
-//               case "text":
-//                 return (
-//                   // <MarkdownRenderer key={`${message.id}`}>
-//                   //   {" "}
-
-//                   //   {part.text}
-//                   // </MarkdownRenderer>
-                  
-//                   <CodeBlock key={message.id}>{part.text}</CodeBlock>
-
-//                 );
-//             }
-//           })}
-//         </div>
-//       ))}
-
-//       <form onSubmit={handleSubmit}>
-//         <input
-//           className="fixed dark:bg-zinc-900 bottom-0 w-full max-w-md p-2 mb-8 border border-zinc-300 dark:border-zinc-800 rounded shadow-xl"
-//           value={input}
-//           placeholder="Say something..."
-//           onChange={handleInputChange}
-//         />
-//       </form>
-//     </div>
-//   );
-// }
-
-// pages/index.js
-// import { useState } from 'react';
-
-// export default function Home() {
-//   const [file, setFile] = useState(null);
-//   const [query, setQuery] = useState('');
-//   const [result, setResult] = useState('');
-
-//   const handleUpload = async (e) => {
-//     e.preventDefault();
-//     const formData = new FormData();
-//     formData.append('file', file);
-
-//     const res = await fetch('/api/upload', {
-//       method: 'POST',
-//       body: formData,
-//     });
-//     const data = await res.json();
-//     console.log(data);
-//   };
-
-//   const handleSearch = async (e) => {
-//     e.preventDefault();
-//     const res = await fetch('/api/search', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ text: query }),
-//     });
-//     const data = await res.json();
-//     setResult(data.results);
-//   };
-
-//   return (
-//     <div>
-//       <form onSubmit={handleUpload}>
-//         <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-//         <button type="submit">Upload</button>
-//       </form>
-//       <form onSubmit={handleSearch}>
-//         <input value={query} onChange={(e) => setQuery(e.target.value)} />
-//         <button type="submit">Search</button>
-//       </form>
-//       <p>{result}</p>
-//     </div>
-//   );
-// }
