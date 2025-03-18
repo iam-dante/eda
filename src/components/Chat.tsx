@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
-import { Tab } from "@headlessui/react"; // Update this line
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"; // Update this line
 import { useChat } from "@ai-sdk/react";
 import { GenerateCards } from "./GenerateCards";
 import SimpleMarkdownRenderer from "./SimpleMarkdown";
@@ -107,8 +107,8 @@ These are just a few examples of plots that can be created using statistical dat
 
   return (
     <div key={chatId} className="h-screen py-4 bg-orange-50">
-      <Tab.Group as={"div"} className="flex flex-col h-full ">
-        <Tab.List className="flex space-x-1 rounded-md  p-2 mx-[40%] border-2 border-gray-500">
+      <TabGroup as={"div"} className="flex flex-col h-full ">
+        <TabList className="flex space-x-1 rounded-md  p-2 mx-[40%] border-2 border-gray-500">
           <Tab
             className={({ selected }) =>
               cn(
@@ -135,9 +135,9 @@ These are just a few examples of plots that can be created using statistical dat
           >
             <h1 className="font-jet text-md">Create Question</h1>
           </Tab>
-        </Tab.List>
-        <Tab.Panels className="flex-1 overflow-hidden">
-          <Tab.Panel className="h-full">
+        </TabList>
+        <TabPanels className="flex-1 overflow-hidden">
+          <TabPanel className="h-full">
             <div className="h-full mt-2 overflow-hidden">
               <div className="h-[85%] overflow-y-auto px-64">
                 {/* {<SimpleMarkdownRenderer content={test} />} */}
@@ -288,12 +288,12 @@ These are just a few examples of plots that can be created using statistical dat
               </div>
             </div>
             <Toaster />
-          </Tab.Panel>
-          <Tab.Panel className="h-full ">
+          </TabPanel>
+          <TabPanel className="h-full ">
             <GenerateCards />
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </div>
   );
 }

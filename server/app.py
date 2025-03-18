@@ -8,20 +8,13 @@ import uuid
 import unicodedata
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.text_splitter import NLTKTextSplitter
 import requests
 import logging
 from utils import full_text_cleanup
 from groq import Groq
-import nltk
 import fitz
 from io import BytesIO
 import time
-
-# nltk.download('punkt_tab')
-# # On server 
-# nltk.data.path.append('/opt/render/nltk_data')
-# nltk.download('punkt_tab', download_dir='/opt/render/nltk_data')
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -56,15 +49,16 @@ def extract_text_langchain(pdf_path):
 
 
 def lang_clean_text(text):
-    # text = text.replace("\n", " ").strip()  
     text = full_text_cleanup(text)
     text_splitter = CharacterTextSplitter(chunk_size=100, chunk_overlap=20)
     return text_splitter.split_text(text)
 
+
 def split_text_into_sentences(text):
-    text_splitter = NLTKTextSplitter()
-    sentences = text_splitter.split_text(text)
-    cleaned_sentences = [sentence.replace("\n", " ") for sentence in sentences]
+    # Using regex to split text into sentences instead of NLTK
+    # This pattern looks for sentence-ending punctuation followed by whitespace
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    cleaned_sentences = [sentence.replace("\n", " ").strip() for sentence in sentences if sentence.strip()]
     return cleaned_sentences
 
 

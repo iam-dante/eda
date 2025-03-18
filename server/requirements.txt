@@ -11,4 +11,3 @@ openai
 groq
 langchain
 langchain-community
-nltk
