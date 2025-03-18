@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import { createOllama } from "ollama-ai-provider";
 import { ChromaClient } from "chromadb";
 import { DefaultEmbeddingFunction } from "chromadb";
+import { groq } from "@ai-sdk/groq";
 
 // Set runtime to nodejs for native modules
 // export const runtime = "nodejs";
@@ -10,14 +11,16 @@ import { DefaultEmbeddingFunction } from "chromadb";
 // const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
 
 // Initialize Ollama client
-const ollamaClient = createOllama({
-  baseURL: "http://localhost:11434/api/generate",
-  headers: { "Content-Type": "application/json" },
-});
+// const ollamaClient = createOllama({
+//   baseURL: "http://localhost:11434/api/generate",
+//   headers: { "Content-Type": "application/json" },
+// });
 
 
 // Initialize model handler
-const model = ollamaClient("llama3.2");
+// const model = ollamaClient("llama3.2");
+
+
 
 // Allow streaming responses up to 100 seconds
 export const maxDuration = 60;
@@ -25,6 +28,8 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   try {
     const { messages, fileid, document } = await req.json();
+
+    
 
     // Get the last user message (assuming messages is an array of message objects)
     const lastUserMessage = Array.isArray(messages)
@@ -64,6 +69,7 @@ ${lastUserMessage}
 **Response:**  
 [Generate your answer here based on the document and query]
 `;
+    const model = groq("mistral-saba-24b");
 
     // Stream the response
     const result = streamText({

@@ -42,7 +42,7 @@ export default function FlashCard({ question, answer, questionNo }:any) {
 
         {/* Answer Side (back) */}
         <animated.div
-          className="absolute w-full h-full bg-orange-50 rounded-xl shadow-lg p-6"
+          className="absolute w-full h-full bg-orange-50 rounded-xl shadow-lg p-6 border-2 border-orange-800"
           style={{
             opacity,
             transform: transform.to((t) => `${t} rotateY(180deg)`),
@@ -50,7 +50,7 @@ export default function FlashCard({ question, answer, questionNo }:any) {
           }}
         >
           <div className="flex flex-col justify-between h-full">
-            <h3 className="text-xl font-medium text-gray-800">Answer</h3>
+            <h3 className="text-xl font-medium text-black">Answer</h3>
             <p className="text-gray-700">{answer}</p>
             <p className="text-sm text-gray-500 italic mt-4">
               Click to see question

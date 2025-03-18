@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
+"@ai-sdk/groq@^1.1.14":
+  version "1.1.14"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/groq/-/groq-1.1.14.tgz#accbc4548cca646edf95e4ba4dab01e112e8d147"
+  integrity sha512-LbjpTwN8kLeU/+nfE9inFVQRff1U194j7FJfJNTpKAMPB1AJB7EhPd06IbRdQ7i1CB+fEGnpeQc8gyISjWBQug==
+  dependencies:
+    "@ai-sdk/provider" "1.0.11"
+    "@ai-sdk/provider-utils" "2.1.13"
+
 "@ai-sdk/openai@^1.2.5":
   version "1.2.5"
   resolved "https://registry.npmjs.org/@ai-sdk/openai/-/openai-1.2.5.tgz"
