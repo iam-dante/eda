@@ -3,14 +3,14 @@ import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Paperclip, Loader2, Ellipsis } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-// import MarkdownRenderer from "./MarkdownRenderer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Tab } from "@headlessui/react"; // Update this line
 import { useChat } from "@ai-sdk/react";
 import { GenerateCards } from "./GenerateCards";
-import SimpleMarkdownRenderer from "./MarkdownRenderer";
+import SimpleMarkdownRenderer from "./SimpleMarkdown";
+
 
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
@@ -96,8 +96,17 @@ export default function Chat({ chatId }: { chatId: string }) {
     }
   };
 
+  const test = `Based on the provided document, it appears that the user can create various types of plots and visualizations using statistical data. The document mentions the following:
+
+
+- **Side-by-side boxplot**: A plot that compares two or more datasets side by side.
+- **Scatterplot with additional variables**: A plot that displays the relationship between two variables, with additional information encoded in symbol type and/or color.
+
+
+These are just a few examples of plots that can be created using statistical data. The document does not provide an exhaustive list of all possible plots that can be made, but it suggests that various types of visualizations can be used to explore and understand statistical data.`
+
   return (
-    <div key={chatId} className="h-screen py-4">
+    <div key={chatId} className="h-screen py-4 bg-orange-50">
       <Tab.Group as={"div"} className="flex flex-col h-full ">
         <Tab.List className="flex space-x-1 rounded-md  p-2 mx-[40%] border-2 border-gray-500">
           <Tab
@@ -131,6 +140,7 @@ export default function Chat({ chatId }: { chatId: string }) {
           <Tab.Panel className="h-full">
             <div className="h-full mt-2 overflow-hidden">
               <div className="h-[85%] overflow-y-auto px-64">
+                {/* {<SimpleMarkdownRenderer content={test} />} */}
                 <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
                   {messages.map((message) => (
                     <div
@@ -159,12 +169,16 @@ export default function Chat({ chatId }: { chatId: string }) {
                           </div>
                         )}
 
-                        {/* <SimpleMarkdownRenderer content={message.content} />
-                         */}
+                        {/* <SimpleMarkdownRenderer
+                          content={message.content.trim()}
+                        /> */}
+                        <p>{message.content.trim()}</p>
 
-                         <p>{message.content}</p>
+                        {/* <MarkdownRenderer content={message.content}/> */}
+
+                        {/* <p>{message.content}</p> */}
                         {message.role === "user" && attachmentUrl && (
-                          <div className="mt-2">
+                          <div className="">
                             <a
                               href={attachmentUrl}
                               target="_blank"
@@ -187,10 +201,11 @@ export default function Chat({ chatId }: { chatId: string }) {
                   <div ref={bottomRef} />
                 </div>
               </div>
+
               <div className="h-[15%] py-4 px-72">
                 <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-24 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
+                    <div className="h-28 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
                       <div className="flex items-center w-full">
                         <input
                           type="text"
@@ -209,7 +224,7 @@ export default function Chat({ chatId }: { chatId: string }) {
                               : "Type your message..."
                           }
                           className={cn(
-                            "w-full h-22 text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                            "w-full h-24  text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
                             !isInitialUploadDone &&
                               !attachment &&
                               "cursor-not-allowed"
@@ -275,8 +290,7 @@ export default function Chat({ chatId }: { chatId: string }) {
             <Toaster />
           </Tab.Panel>
           <Tab.Panel className="h-full ">
-                        
-        <GenerateCards/>
+            <GenerateCards />
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>

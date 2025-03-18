@@ -4,10 +4,10 @@ import { ChromaClient } from "chromadb";
 import { DefaultEmbeddingFunction } from "chromadb";
 
 // Set runtime to nodejs for native modules
-export const runtime = "nodejs";
+// export const runtime = "nodejs";
 
-const defaultEF = new DefaultEmbeddingFunction();
-const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
+// const defaultEF = new DefaultEmbeddingFunction();
+// const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
 
 // Initialize Ollama client
 const ollamaClient = createOllama({
@@ -15,17 +15,6 @@ const ollamaClient = createOllama({
   headers: { "Content-Type": "application/json" },
 });
 
-// Initialize ChromaDB client
-// const client = new ChromaClient({
-//   path: "https://api.trychroma.com:8000",
-//   auth: {
-//     provider: "token",
-//     credentials: CHROMADB_API_TOKEN,
-//     tokenHeaderType: "X_CHROMA_TOKEN",
-//   },
-//   tenant: "c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed",
-//   database: "rag-0a14d70f",
-// });
 
 // Initialize model handler
 const model = ollamaClient("llama3.2");
@@ -42,8 +31,7 @@ export async function POST(req: Request) {
       ? messages.filter((m) => m.role === "user").pop()?.content || ""
       : messages;
 
-    // console.log("Messages:", messages);
-    // console.log("Messages:", document);
+    console.log("Messages:", messages);
 
     // Get collection and query
     // const collection = await client.getCollection({
@@ -84,19 +72,14 @@ ${lastUserMessage}
     });
 
     return result.toDataStreamResponse();
-    
-  } catch (error: unknown) {
-  console.error("Chat API error:", error);
-  
-  const errorMessage = error instanceof Error 
-    ? error.message 
-    : 'Unknown error occurred';
-
-  return new Response(
-    JSON.stringify({
-      error: "Failed to process chat request",
-      details: errorMessage,
-    }),
-    { status: 500, headers: { "Content-Type": "application/json" } }
-  );
-}}
+  } catch (error) {
+    console.error("Chat API error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to process chat request",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}

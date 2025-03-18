@@ -1,16 +1,16 @@
-import React, { memo } from "react";
+import React, { memo, useEffect, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
+// Import styles only, we'll dynamically import the component
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface MarkdownRendererProps {
   content: string;
   isUser?: boolean;
 }
 
-// Simpler version of the CodeBlock component without explicit SyntaxHighlighterProps
+// Dynamic import for SyntaxHighlighter to avoid type conflicts
 const SimpleCodeBlock = ({
   children,
   className,
@@ -18,14 +18,22 @@ const SimpleCodeBlock = ({
   children: string;
   className?: string;
 }) => {
-  // Extract language from className (format: language-xxx)
+  const [SyntaxHighlighterComponent, setSyntaxHighlighterComponent] =
+    useState<any>(null);
   const language = className
     ? className.replace("language-", "")
     : "javascript";
 
+  useEffect(() => {
+    // Dynamically import the component
+    import("react-syntax-highlighter").then((module) => {
+      setSyntaxHighlighterComponent(() => module.PrismLight);
+    });
+  }, []);
+
   return (
-    <div className="relative my-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-1.5">
+    <div className="relative my-2 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-1">
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
           {language}
         </span>
@@ -38,20 +46,27 @@ const SimpleCodeBlock = ({
           Copy
         </button>
       </div>
-      {/* Using SyntaxHighlighter directly without explicit typing */}
-      <SyntaxHighlighter
-        language={language}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          padding: "1rem",
-          fontSize: "0.875rem",
-          lineHeight: 1.5,
-          borderRadius: 0,
-        }}
-      >
-        {String(children).replace(/\n$/, "")}
-      </SyntaxHighlighter>
+      <div>
+        {SyntaxHighlighterComponent ? (
+          <SyntaxHighlighterComponent
+            language={language}
+            style={oneDark}
+            customStyle={{
+              margin: 0,
+              padding: "0.7rem",
+              fontSize: "0.875rem",
+              lineHeight: 0.1,
+              borderRadius: 0,
+            }}
+          >
+            {String(children).replace(/\n$/, "")}
+          </SyntaxHighlighterComponent>
+        ) : (
+          <pre className="p-3 overflow-auto text-sm text-gray-200 bg-gray-800">
+            {String(children).replace(/\n$/, "")}
+          </pre>
+        )}
+      </div>
     </div>
   );
 };
@@ -78,13 +93,13 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     },
     pre: ({ children }) => <>{children}</>,
     p: ({ children }) => (
-      <p className="text-gray-800 dark:text-gray-200 text-base leading-relaxed mb-4">
+      <p className="text-gray-800 dark:text-gray-200 text-base leading-relaxed ">
         {children}
       </p>
     ),
     h1: ({ children, ...props }) => (
       <h1
-        className="text-3xl font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-3xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -92,7 +107,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h2: ({ children, ...props }) => (
       <h2
-        className="text-2xl font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-2xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -100,7 +115,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h3: ({ children, ...props }) => (
       <h3
-        className="text-xl font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -108,7 +123,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h4: ({ children, ...props }) => (
       <h4
-        className="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-lg font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -116,7 +131,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h5: ({ children, ...props }) => (
       <h5
-        className="text-base font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-base font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -124,7 +139,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h6: ({ children, ...props }) => (
       <h6
-        className="text-sm font-semibold text-gray-900 dark:text-white mt-6 mb-2"
+        className="text-sm font-semibold text-gray-900 dark:text-white mt-4 mb-1"
         {...props}
       >
         {children}
@@ -132,7 +147,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ul: ({ children, ...props }) => (
       <ul
-        className="list-disc pl-5 my-4 text-gray-800 dark:text-gray-200"
+        className="list-disc pl-5 my-1 text-gray-800 dark:text-gray-200"
         {...props}
       >
         {children}
@@ -140,14 +155,14 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ol: ({ children, ...props }) => (
       <ol
-        className="list-decimal pl-5 my-4 text-gray-800 dark:text-gray-200"
+        className="list-decimal pl-5 my-1 text-gray-800 dark:text-gray-200"
         {...props}
       >
         {children}
       </ol>
     ),
     li: ({ children, ...props }) => (
-      <li className="text-base py-1 mb-1" {...props}>
+      <li className="text-base py-0.5 mb-0.5" {...props}>
         {children}
       </li>
     ),
@@ -163,13 +178,13 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       </Link>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-gray-200 dark:border-gray-700 pl-4 italic text-gray-600 dark:text-gray-400 my-4">
+      <blockquote className="border-l-4 border-gray-200 dark:border-gray-700 pl-4 italic text-gray-600 dark:text-gray-400 my-2">
         {children}
       </blockquote>
     ),
-    hr: () => <hr className="my-6 border-gray-200 dark:border-gray-700" />,
+    hr: () => <hr className="my-3 border-gray-200 dark:border-gray-700" />,
     table: ({ children }) => (
-      <div className="overflow-x-auto my-4">
+      <div className="overflow-x-auto my-2">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           {children}
         </table>
@@ -185,12 +200,12 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     tr: ({ children }) => <tr>{children}</tr>,
     th: ({ children }) => (
-      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         {children}
       </th>
     ),
     td: ({ children }) => (
-      <td className="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+      <td className="px-3 py-1.5 text-sm text-gray-800 dark:text-gray-200">
         {children}
       </td>
     ),
@@ -202,7 +217,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   };
 
   return (
-    <div className={`markdown-content ${isUser ? "user" : "assistant"} py-2`}>
+    <div className={`markdown-content ${isUser ? "user" : "assistant"} py-1`}>
       <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
         {content}
       </ReactMarkdown>
