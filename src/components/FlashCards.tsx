@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSpring, animated } from "react-spring";
 
-export default function FlashCard({ question, answer, questionNo }) {
+export default function FlashCard({ question, answer, questionNo }:any) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   // Create the animation for the card

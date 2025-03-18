@@ -1,22 +1,22 @@
 import React, { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
+import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
 
 interface MarkdownRendererProps {
   content: string;
   isUser?: boolean;
 }
 
-const CodeBlock = ({
-  children,
-  className,
-}: {
+interface CodeBlockProps {
   children: string;
   className?: string;
-}) => {
+}
+
+const CodeBlock: React.FC<CodeBlockProps> = ({ children, className }) => {
   // Extract language from className (format: language-xxx)
   const language = className
     ? className.replace("language-", "")
@@ -190,9 +190,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         {children}
       </td>
     ),
-    // img: ({ src, alt }) => (
-    //   <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4" />
-    // ),
     strong: ({ children, ...props }) => (
       <span className="font-semibold" {...props}>
         {children}
@@ -201,11 +198,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   };
 
   return (
-    <div
-      className={`markdown-content ${
-        isUser ? "user" : "assistant"
-      } py-2`}
-    >
+    <div className={`markdown-content ${isUser ? "user" : "assistant"} py-2`}>
       <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
         {content}
       </ReactMarkdown>

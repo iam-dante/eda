@@ -7,7 +7,7 @@ import { Loader2, Upload } from "lucide-react";
 import axios from "axios";
 
 export const GenerateCards = () => {
-  const [cards, setCards] = useState([]);
+  const [cards, setCards] = useState<{ question: string; answer: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   console.log(cards)

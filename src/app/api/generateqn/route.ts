@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
     console.log(responseContent)
 
-    const questions = JSON.parse(responseContent?.trim());
+    const questions = JSON.parse((responseContent?.trim() ?? "{}"));
 
     return NextResponse.json({ questions });
   } catch (error) {

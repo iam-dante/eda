@@ -11,7 +11,7 @@ const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
 
 // Initialize Ollama client
 const ollamaClient = createOllama({
-  baseUrl: "http://localhost:11434/api/generate",
+  baseURL: "http://localhost:11434/api/generate",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -83,14 +83,18 @@ ${lastUserMessage}
     });
 
     return result.toDataStreamResponse();
-  } catch (error) {
-    console.error("Chat API error:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Failed to process chat request",
-        details: error.message,
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-}
+  } catch (error: unknown) {
+  console.error("Chat API error:", error);
+  
+  const errorMessage = error instanceof Error 
+    ? error.message 
+    : 'Unknown error occurred';
+
+  return new Response(
+    JSON.stringify({
+      error: "Failed to process chat request",
+      details: errorMessage,
+    }),
+    { status: 500, headers: { "Content-Type": "application/json" } }
+  );
+}}
