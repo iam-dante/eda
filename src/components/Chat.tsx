@@ -61,7 +61,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:5000/upload",
+          "https://web-rag.onrender.com/upload",
           formData,
           {
             headers: {
@@ -205,7 +205,7 @@ These are just a few examples of plots that can be created using statistical dat
               <div className="h-[15%] py-4 px-72">
                 <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-28 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
+                    <div className="h-24 py-1 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
                       <div className="flex items-center w-full">
                         <input
                           type="text"
@@ -224,7 +224,7 @@ These are just a few examples of plots that can be created using statistical dat
                               : "Type your message..."
                           }
                           className={cn(
-                            "w-full h-24  text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                            "w-full h-full  text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
                             !isInitialUploadDone &&
                               !attachment &&
                               "cursor-not-allowed"
