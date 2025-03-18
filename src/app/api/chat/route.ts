@@ -20,7 +20,7 @@ const ollamaClient = createOllama({
 const model = ollamaClient("llama3.2");
 
 // Allow streaming responses up to 100 seconds
-export const maxDuration = 100;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
