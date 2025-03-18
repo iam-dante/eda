@@ -4,19 +4,20 @@ import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
-import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
 
 interface MarkdownRendererProps {
   content: string;
   isUser?: boolean;
 }
 
-interface CodeBlockProps {
+// Simpler version of the CodeBlock component without explicit SyntaxHighlighterProps
+const SimpleCodeBlock = ({
+  children,
+  className,
+}: {
   children: string;
   className?: string;
-}
-
-const CodeBlock: React.FC<CodeBlockProps> = ({ children, className }) => {
+}) => {
   // Extract language from className (format: language-xxx)
   const language = className
     ? className.replace("language-", "")
@@ -37,6 +38,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className }) => {
           Copy
         </button>
       </div>
+      {/* Using SyntaxHighlighter directly without explicit typing */}
       <SyntaxHighlighter
         language={language}
         style={oneDark}
@@ -54,7 +56,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className }) => {
   );
 };
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
+const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   isUser = false,
 }) => {
@@ -62,7 +64,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     code({ node, className, children, ...props }: any) {
       const hasLanguage = /language-\w+/.test(className || "");
       return hasLanguage ? (
-        <CodeBlock className={className}>{String(children)}</CodeBlock>
+        <SimpleCodeBlock className={className}>
+          {String(children)}
+        </SimpleCodeBlock>
       ) : (
         <code
           className="bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 text-sm font-mono text-gray-800 dark:text-gray-200"
@@ -207,11 +211,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 };
 
 // Memoized version to prevent unnecessary re-renders
-export const MemoizedMarkdownRenderer = memo(
-  MarkdownRenderer,
+export const MemoizedSimpleMarkdownRenderer = memo(
+  SimpleMarkdownRenderer,
   (prevProps, nextProps) =>
     prevProps.content === nextProps.content &&
     prevProps.isUser === nextProps.isUser
 );
 
-export default MarkdownRenderer;
+export default SimpleMarkdownRenderer;

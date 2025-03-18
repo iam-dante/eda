@@ -3,13 +3,14 @@ import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Paperclip, Loader2, Ellipsis } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import MarkdownRenderer from "./MarkdownRenderer";
+// import MarkdownRenderer from "./MarkdownRenderer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { Tab } from "@headlessui/react"; // Update this line
 import { useChat } from "@ai-sdk/react";
 import { GenerateCards } from "./GenerateCards";
+import SimpleMarkdownRenderer from "./MarkdownRenderer";
 
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
@@ -32,6 +33,8 @@ export default function Chat({ chatId }: { chatId: string }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // console.log(messages)
 
   const production_url = "https://web-rag.onrender.com";
   const local_url = "http://127.0.0.1:5000";
@@ -156,7 +159,10 @@ export default function Chat({ chatId }: { chatId: string }) {
                           </div>
                         )}
 
-                        <MarkdownRenderer content={message.content} />
+                        {/* <SimpleMarkdownRenderer content={message.content} />
+                         */}
+
+                         <p>{message.content}</p>
                         {message.role === "user" && attachmentUrl && (
                           <div className="mt-2">
                             <a

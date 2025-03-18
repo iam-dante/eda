@@ -42,7 +42,8 @@ export async function POST(req: Request) {
       ? messages.filter((m) => m.role === "user").pop()?.content || ""
       : messages;
 
-    console.log("Messages:", messages);
+    // console.log("Messages:", messages);
+    // console.log("Messages:", document);
 
     // Get collection and query
     // const collection = await client.getCollection({
@@ -83,6 +84,7 @@ ${lastUserMessage}
     });
 
     return result.toDataStreamResponse();
+    
   } catch (error: unknown) {
   console.error("Chat API error:", error);
   

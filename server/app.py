@@ -15,6 +15,8 @@ from utils import full_text_cleanup
 from groq import Groq
 import nltk
 import fitz
+from io import BytesIO
+import time
 
 # nltk.download('punkt_tab')
 # # On server 
@@ -34,7 +36,6 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 CHROMADB_API_TOKEN = os.getenv('CHROMA_API_KEY')
 SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
-
 
 # Initialize ChromaDB client
 chroma_client = chromadb.HttpClient(
@@ -78,11 +79,19 @@ def create_resources(file_path):
 current_collection_name = None
 
 def get_or_create_collection():
+    """Get the current collection or create a new one with a unique name."""
+    global current_collection_name
     
-    collection = chroma_client.create_collection(name=current_collection_name)
-    current_collection_name = current_collection_name
-
-    return collection, current_collection_name
+    if not current_collection_name:
+        return None, None
+    
+    try:
+        # Try to get the existing collection
+        collection = chroma_client.get_collection(name=current_collection_name)
+        return collection, current_collection_name
+    except Exception as e:
+        logging.error(f"Error getting collection: {str(e)}")
+        return None, None
 
 def create_resources_from_bytes(pdf_stream):
     """Modified version of create_resources to work with BytesIO instead of file path"""
@@ -113,6 +122,12 @@ def create_resources_from_bytes(pdf_stream):
         logging.error(f"Error in create_resources_from_bytes: {str(e)}")
         return []
 
+def generate_unique_collection_name(base_name):
+    """Generate a unique collection name by adding timestamp and UUID."""
+    timestamp = int(time.time())
+    unique_id = str(uuid.uuid4())[:8]  # Use first 8 chars of UUID for brevity
+    return f"{base_name}_{timestamp}_{unique_id}"
+
 def save_to_chromadb(file, fileID):
     """Save file to ChromaDB."""
     try:
@@ -123,12 +138,14 @@ def save_to_chromadb(file, fileID):
         filename = file.filename
         # ...existing validation code...
 
-        # Create new collection for this upload
+        # Create new collection with a guaranteed unique name
         global current_collection_name
-        current_collection_name = f"doc_{fileID}"
+        base_name = f"doc_{fileID}"
+        current_collection_name = generate_unique_collection_name(base_name)
         
         try:
             collection = chroma_client.create_collection(name=current_collection_name)
+            logging.info(f"Created new collection: {current_collection_name}")
         except Exception as e:
             logging.error(f"Error creating collection: {str(e)}")
             return {'error': 'Failed to create new collection'}, 500
@@ -137,7 +154,6 @@ def save_to_chromadb(file, fileID):
         file_bytes = file.read()
         
         # Create a BytesIO object to work with PyMuPDF
-        from io import BytesIO
         pdf_stream = BytesIO(file_bytes)
         
         # Process the file and get resources
@@ -159,7 +175,7 @@ def save_to_chromadb(file, fileID):
                 'documents_processed': len(resources),
                 'collection_id': current_collection_name,
                 'filename': filename,
-                "document":document
+                "document": document
             }, 200
             
         except Exception as e:
@@ -178,8 +194,7 @@ def upload_file():
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    fileID = request.form.get('fileID')
-    # fileID = "DNIURGNAJKRJGNRIAU"
+    fileID = str(uuid.uuid4())  # Generate a unique ID for each file upload
 
     response, status = save_to_chromadb(file, fileID)
     return jsonify(response), status
@@ -336,6 +351,44 @@ def search():
         logging.error(f"Search failed: {e}")
         return jsonify({"error": f"Search failed: {str(e)}"}), 500
 
+@app.route('/extract_text', methods=['POST'])
+def extract_text():
+    """API endpoint to extract text from uploaded PDF file"""
+    
+    # Check if file is present in request
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    
+    # Check if filename is empty
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Check if file is a PDF
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({'error': 'Only PDF files are supported'}), 400
+    
+    try:
+        # Read file into memory
+        file_stream = BytesIO(file.read())
+        
+        # Extract text
+        sentences = create_resources_from_bytes(file_stream)
+        
+        if not sentences:
+            return jsonify({'error': 'Failed to extract text from PDF'}), 500
+        
+        # Return extracted text
+        return jsonify({
+            'success': True,
+            'sentences': sentences,
+            'sentence_count': len(sentences)
+        })
+    
+    except Exception as e:
+        logging.error(f"Error processing PDF: {str(e)}")
+        return jsonify({'error': f'Error processing PDF: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
