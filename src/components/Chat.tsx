@@ -11,7 +11,6 @@ import { useChat } from "@ai-sdk/react";
 import { GenerateCards } from "./GenerateCards";
 import SimpleMarkdownRenderer from "./SimpleMarkdown";
 
-
 export default function Chat({ chatId }: { chatId: string }) {
   const [isInitialUploadDone, setIsInitialUploadDone] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -103,12 +102,12 @@ export default function Chat({ chatId }: { chatId: string }) {
 - **Scatterplot with additional variables**: A plot that displays the relationship between two variables, with additional information encoded in symbol type and/or color.
 
 
-These are just a few examples of plots that can be created using statistical data. The document does not provide an exhaustive list of all possible plots that can be made, but it suggests that various types of visualizations can be used to explore and understand statistical data.`
+These are just a few examples of plots that can be created using statistical data. The document does not provide an exhaustive list of all possible plots that can be made, but it suggests that various types of visualizations can be used to explore and understand statistical data.`;
 
   return (
     <div key={chatId} className="h-screen py-4 bg-orange-50">
       <TabGroup as={"div"} className="flex flex-col h-full ">
-        <TabList className="flex space-x-1 rounded-md  p-2 mx-[40%] border-2 border-gray-500">
+        <TabList className="flex space-x-1 rounded-md p-2 mx-4 md:mx-[40%] border-2 border-gray-500">
           <Tab
             className={({ selected }) =>
               cn(
@@ -139,19 +138,19 @@ These are just a few examples of plots that can be created using statistical dat
         <TabPanels className="flex-1 overflow-hidden">
           <TabPanel className="h-full">
             <div className="h-full mt-2 overflow-hidden">
-              <div className="h-[85%] overflow-y-auto px-64">
+              <div className="h-[85%] overflow-y-auto px-4 md:px-64">
                 {/* {<SimpleMarkdownRenderer content={test} />} */}
-                <div className="space-y-2 flex flex-col min-h-full w-full max-w-[calc(100vw-512px)]">
+                <div className="space-y-2 flex flex-col min-h-full w-full md:max-w-[calc(100vw-512px)]">
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className="grid justify-items-stretch"
                     >
                       <div
-                        className={`px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
+                        className={`px-3 md:px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
                           message.role === "user"
-                            ? "bg-orange-200 justify-self-end max-w-[70%]"
-                            : "max-w-[90%] text-[17px] space-y-2"
+                            ? "bg-orange-200 justify-self-end max-w-[85%] md:max-w-[70%]"
+                            : "max-w-[95%] md:max-w-[90%] text-[15px] md:text-[17px] space-y-2"
                         }`}
                         style={{
                           overflowWrap: "break-word",
@@ -202,26 +201,28 @@ These are just a few examples of plots that can be created using statistical dat
                 </div>
               </div>
 
-              <div className="h-[15%] py-4 px-72">
+              <div className="h-[15%] py-4 px-4 md:px-72">
                 <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-24 py-1 w-full bg-white rounded-md pl-6 pr-3 flex items-center border-2 border-black justify-between">
+                    <div className="h-16 md:h-24 py-1 w-full bg-white rounded-md pl-3 md:pl-6 pr-2 md:pr-3 flex items-center border-2 border-black justify-between">
                       <div className="flex items-center w-full">
                         <input
                           type="text"
                           disabled={
                             isLoading || (!isInitialUploadDone && !attachment)
-                          } // Modified this line
+                          }
                           value={input}
                           onChange={handleInputChange}
                           placeholder={
                             isUploading
-                              ? "Uploading file..."
+                              ? "Uploading..."
                               : !isInitialUploadDone && !attachment
-                              ? "Upload a document to start a session..."
+                              ? "Upload document..."
                               : uploadedFileName
-                              ? `Working with: ${uploadedFileName}`
-                              : "Type your message..."
+                              ? `File: ${uploadedFileName.slice(0, 15)}${
+                                  uploadedFileName.length > 15 ? "..." : ""
+                                }`
+                              : "Type message..."
                           }
                           className={cn(
                             "w-full h-full  text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
