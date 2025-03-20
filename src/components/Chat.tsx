@@ -61,7 +61,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "https://822c-2601-14d-4c01-dbf0-855b-7f29-c7aa-6337.ngrok-free.app/upload",
+          "https://rich-drake-mature.ngrok-free.app/upload",
           formData,
           {
             headers: {
