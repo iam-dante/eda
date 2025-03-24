@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       ? messages.filter((m) => m.role === "user").pop()?.content || ""
       : messages;
 
-    console.log("Messages:", messages);
+    // console.log("Messages:", messages);
 
     // Get collection and query
     // const collection = await client.getCollection({
