@@ -132,7 +132,7 @@ These are just a few examples of plots that can be created using statistical dat
               )
             }
           >
-            <h1 className="font-jet text-md">Create Question</h1>
+            <h1 className="font-jet text-md">Create Questions</h1>
           </Tab>
         </TabList>
         <TabPanels className="flex-1 overflow-hidden">
