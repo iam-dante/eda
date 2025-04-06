@@ -23,7 +23,7 @@ export const GenerateCards = () => {
     try {
       // First, extract text using Flask API
       const extractResponse = await axios.post(
-        "https://rich-drake-mature.ngrok-free.app/extract_text",
+        "https://eda-server-production.up.railway.app/extract_text",
         formData,
         {
           headers: {
