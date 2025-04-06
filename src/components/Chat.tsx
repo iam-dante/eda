@@ -48,7 +48,7 @@ export default function Chat({ chatId }: { chatId: string }) {
             "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4"
           ),
           title: "File too large",
-          description: "Please upload a file smaller than 5MB.",
+          description: "Please upload a file smaller than 10MB.",
           variant: "destructive",
         });
         return;
@@ -172,7 +172,9 @@ These are just a few examples of plots that can be created using statistical dat
                             {" "}
                             <div className="flex flex-col">
                               {" "}
-                              <span>&#x2022;</span>{" "}
+                              <h1 className="font-extrabold text-md text-orange-600 font-barriecito">
+                                Eda
+                              </h1>
                             </div>
                           </div>
                         )}
