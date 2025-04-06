@@ -9,6 +9,7 @@ import axios from "axios";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react"; // Update this line
 import { useChat } from "@ai-sdk/react";
 import { GenerateCards } from "./GenerateCards";
+import Link from "next/link";
 import SimpleMarkdownRenderer from "./SimpleMarkdown";
 
 export default function Chat({ chatId }: { chatId: string }) {
@@ -105,9 +106,16 @@ export default function Chat({ chatId }: { chatId: string }) {
 These are just a few examples of plots that can be created using statistical data. The document does not provide an exhaustive list of all possible plots that can be made, but it suggests that various types of visualizations can be used to explore and understand statistical data.`;
 
   return (
-    <div key={chatId} className="h-screen py-4 bg-orange-50">
+    <div key={chatId} className="relative h-screen py-4 bg-orange-50">
+      <div className="absolute h-12  px-8">
+        <Link href={"/"}>
+          <h1 className="font-extrabold text-5xl text-orange-600 font-barriecito">
+            Eda
+          </h1>
+        </Link>
+      </div>
       <TabGroup as={"div"} className="flex flex-col h-full ">
-        <TabList className="flex space-x-1 rounded-md p-2 mx-4 md:mx-[40%] border-2 border-gray-500">
+        <TabList className="flex space-x-1 rounded-md p-2 mx-4 md:mx-[40%] border-2 border-gray-500 ">
           <Tab
             className={({ selected }) =>
               cn(
@@ -132,9 +140,10 @@ These are just a few examples of plots that can be created using statistical dat
               )
             }
           >
-            <h1 className="font-jet text-md">Create Questions</h1>
+            <h1 className="font-jet text-md">FlashCards</h1>
           </Tab>
         </TabList>
+
         <TabPanels className="flex-1 overflow-hidden">
           <TabPanel className="h-full">
             <div className="h-full mt-2 overflow-hidden">
