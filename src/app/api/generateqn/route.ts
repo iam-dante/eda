@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     if (!text) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 });
     }
-    const prompt = `Generate 10 quiz questions with answers based on the following text. Focus exclusively on the concepts, tools, and rules described in the text, avoiding any mention of publication details, authors, or creators.  
+    const prompt = `Generate 10 quiz questions with answers based on the following text. Focus exclusively on the concepts, tools, and rules described in the text, ignoring any mention of authors, creators, publication details, or ISSN.  
     ${text}  
 Format the response as a JSON array of objects, each with 'question' and 'answer' properties. For example: [{"question": "What tools are available for...", "answer": "Tools are available for..."}]  
 
@@ -37,7 +37,7 @@ RETURN ONLY THE JSON ARRAY`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama3-70b-8192",
+      model: "qwen-2.5-32b",
       temperature: 0.7,
     });
 
