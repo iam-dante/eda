@@ -13,7 +13,6 @@ export async function POST(req: Request) {
       : messages;
 
     // Construct the prompt with proper template literals
-
     const prompt = `
 You are an advanced Retrieval-Augmented Generation (RAG) system designed to provide accurate and concise answers based on retrieved documents. Use the following information to assist the user:
 
@@ -35,31 +34,31 @@ ${lastUserMessage}
 
     const model = groq("mistral-saba-24b");
 
-    // Stream the response
+    // Stream the response using the groq model
     const result = streamText({
       model,
       prompt,
     });
 
-    // const openai = new OpenAI({
-    //   apiKey: process.env.OPENAI_API_KEY,
-    // });
-
-    // const response = await openai.completions.create({
-    //   model: "gpt-4.0-turbo",
-    //   prompt: prompt,
-    //   stream: true,
-    // });
-
     return result.toDataStreamResponse();
-  } catch (error) {
+  } catch (error: any) {
+    // Log the error for debugging purposes
     console.error("Chat API error:", error);
+
+    // Construct a more informative error response
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred";
     return new Response(
       JSON.stringify({
         error: "Failed to process chat request",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: errorMessage,
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }
