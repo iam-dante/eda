@@ -1,56 +1,19 @@
 import { streamText } from "ai";
-import { createOllama } from "ollama-ai-provider";
-import { ChromaClient } from "chromadb";
-import { DefaultEmbeddingFunction } from "chromadb";
 import { groq } from "@ai-sdk/groq";
+import OpenAI from "openai";
 
-// Set runtime to nodejs for native modules
-// export const runtime = "nodejs";
-
-// const defaultEF = new DefaultEmbeddingFunction();
-// const CHROMADB_API_TOKEN = process.env.CHROMA_API_KEY;
-
-// Initialize Ollama client
-// const ollamaClient = createOllama({
-//   baseURL: "http://localhost:11434/api/generate",
-//   headers: { "Content-Type": "application/json" },
-// });
-
-
-// Initialize model handler
-// const model = ollamaClient("llama3.2");
-
-
-
-// Allow streaming responses up to 100 seconds
 export const maxDuration = 60;
-
 export async function POST(req: Request) {
   try {
     const { messages, fileid, document } = await req.json();
-
-    
 
     // Get the last user message (assuming messages is an array of message objects)
     const lastUserMessage = Array.isArray(messages)
       ? messages.filter((m) => m.role === "user").pop()?.content || ""
       : messages;
 
-    // console.log("Messages:", messages);
-
-    // Get collection and query
-    // const collection = await client.getCollection({
-    //   name: `doc_${fileid}`,
-    //   embeddingFunction: defaultEF,
-    // });
-
-    // // Query the collection
-    // const queryResults = await collection.query({
-    //   queryTexts: [lastUserMessage], // Use the user's last message as query
-    //   nResults: 4,
-    // });
-
     // Construct the prompt with proper template literals
+
     const prompt = `
 You are an advanced Retrieval-Augmented Generation (RAG) system designed to provide accurate and concise answers based on retrieved documents. Use the following information to assist the user:
 
@@ -69,6 +32,7 @@ ${lastUserMessage}
 **Response:**  
 [Generate your answer here based on the document and query]
 `;
+
     const model = groq("mistral-saba-24b");
 
     // Stream the response
@@ -76,6 +40,16 @@ ${lastUserMessage}
       model,
       prompt,
     });
+
+    // const openai = new OpenAI({
+    //   apiKey: process.env.OPENAI_API_KEY,
+    // });
+
+    // const response = await openai.completions.create({
+    //   model: "gpt-4.0-turbo",
+    //   prompt: prompt,
+    //   stream: true,
+    // });
 
     return result.toDataStreamResponse();
   } catch (error) {
