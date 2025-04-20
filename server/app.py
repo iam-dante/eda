@@ -31,15 +31,19 @@ SAMBANOVA_API_KEY = os.getenv('SAMBANOVA_API_KEY')
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
 
 # Initialize ChromaDB client
-chroma_client = chromadb.HttpClient(
-    ssl=True,
-    host='api.trychroma.com',
-    tenant='c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed',
-    database='rag-0a14d70f',
-    headers={
-        'x-chroma-token': CHROMADB_API_TOKEN
-    }
+# pip install chromadb
+
+import chromadb
+client = chromadb.HttpClient(
+  ssl=True,
+  host='api.trychroma.com',
+  tenant='c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed',
+  database='eda-database',
+  headers={
+    'x-chroma-token': CHROMADB_API_TOKEN,
+  }
 )
+  
 
 
 def extract_text_langchain(pdf_path):
