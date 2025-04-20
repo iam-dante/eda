@@ -34,13 +34,13 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
 # pip install chromadb
 
 import chromadb
-client = chromadb.HttpClient(
+chroma_client = chromadb.HttpClient(
   ssl=True,
   host='api.trychroma.com',
   tenant='c74d6ead-7a1a-4e7d-afbb-3dd8d548c5ed',
   database='eda-database',
   headers={
-    'x-chroma-token': CHROMADB_API_TOKEN,
+    'x-chroma-token':CHROMADB_API_TOKEN,
   }
 )
   
@@ -161,12 +161,16 @@ def save_to_chromadb(file, fileID):
         if not resources:
             return {'error': 'No valid text content could be extracted'}, 400
 
-        # Add documents to collection
+        # Add documents to collection in batches to avoid exceeding maximum batch size
         try:
-            collection.add(
-                documents=resources,
-                ids=[f"{uuid.uuid4()}" for _ in range(len(resources))]
-            )
+            batch_size = 100
+            for i in range(0, len(resources), batch_size):
+                batch_docs = resources[i:i+batch_size]
+                batch_ids = [str(uuid.uuid4()) for _ in range(len(batch_docs))]
+                collection.add(
+                    documents=batch_docs,
+                    ids=batch_ids
+                )
             
             return {
                 'message': 'File processed and uploaded successfully',

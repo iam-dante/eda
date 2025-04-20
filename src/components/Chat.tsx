@@ -215,8 +215,8 @@ These are just a few examples of plots that can be created using statistical dat
               <div className="h-[15%] py-4 px-4 md:px-72">
                 <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-16 md:h-24 py-1 w-full bg-white rounded-md pl-3 md:pl-6 pr-2 md:pr-3 flex items-center border-2 border-black justify-between">
-                      <div className="flex items-center w-full">
+                    <div className="h-16 md:h-24 py-1 w-full bg-white rounded-md pl-3 md:pl-6 pr-2 md:pr-3 flex items-center border-2 border-black">
+                      <div className="flex items-center w-full h-24 py-2">
                         <input
                           type="text"
                           disabled={
@@ -230,13 +230,13 @@ These are just a few examples of plots that can be created using statistical dat
                               : !isInitialUploadDone && !attachment
                               ? "Upload document..."
                               : uploadedFileName
-                              ? `File: ${uploadedFileName.slice(0, 15)}${
+                              ? `File: ${uploadedFileName.slice(0, 20)}${
                                   uploadedFileName.length > 15 ? "..." : ""
                                 }`
                               : "Type message..."
                           }
                           className={cn(
-                            "w-full h-full  text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                            "w-full h-full text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
                             !isInitialUploadDone &&
                               !attachment &&
                               "cursor-not-allowed"
@@ -267,7 +267,7 @@ These are just a few examples of plots that can be created using statistical dat
                           }
                         >
                           {isLoading ? (
-                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                            <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
                           ) : (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
