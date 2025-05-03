@@ -7,10 +7,13 @@ import { Loader2, Upload } from "lucide-react";
 import axios from "axios";
 
 export const GenerateCards = () => {
-  const [cards, setCards] = useState<{ question: string; answer: string }[]>([]);
+  const [cards, setCards] = useState<{ question: string; answer: string }[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
+  const [questionCount, setQuestionCount] = useState(10); // State for dropdown selection
   const { toast } = useToast();
-  console.log(cards)
+  console.log(cards);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,7 +36,6 @@ export const GenerateCards = () => {
       );
 
       const extractedText = extractResponse.data.sentences[0];
-    //   console.log("This is the extracted text", extractedText[0])
 
       if (!extractedText) {
         throw new Error("No text extracted from document");
@@ -45,7 +47,7 @@ export const GenerateCards = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: extractedText }),
+        body: JSON.stringify({ text: extractedText, count: questionCount }), // Include question count
       });
 
       if (!generateResponse.ok) throw new Error("Failed to generate questions");
@@ -78,13 +80,12 @@ export const GenerateCards = () => {
           </div>
         ) : cards.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto h-full">
-
             {cards.map((card, index) => (
               <FlashCard
                 key={index}
                 question={card.question}
                 answer={card.answer}
-                questionNo={index}
+                questionNo={index} // Start numbering from 1
               />
             ))}
           </div>
@@ -96,8 +97,37 @@ export const GenerateCards = () => {
         )}
       </div>
 
-      <div className="h-[15%] flex items-center justify-center">
-        <label className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg cursor-pointer transition-colors">
+      <div className="h-[15%] flex flex-col items-center justify-center gap-4">
+        {/* Enhanced dropdown for selecting question count */}
+        <div className="relative">
+          <select
+            value={questionCount}
+            onChange={(e) => setQuestionCount(Number(e.target.value))}
+            className="appearance-none border border-gray-300 rounded-lg px-4 py-2 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value={10}>10 Questions</option>
+            <option value={15}>15 Questions</option>
+            <option value={20}>20 Questions</option>
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg
+              className="w-4 h-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <label className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg cursor-pointer transition-colors shadow-md">
           <input
             type="file"
             className="hidden"

@@ -7,13 +7,13 @@ const groq = new Groq({
 
 export async function POST(req: Request) {
   try {
-    const { text } = await req.json();
+    const { text, count } = await req.json();
     console.log("This is the server",text)
 
     if (!text) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 });
     }
-    const prompt = `Generate 10 quiz questions with answers based on the following text. Focus exclusively on the concepts, tools, and rules described in the text, ignoring any mention of authors, creators, publication details, or ISSN.  
+    const prompt = `Generate ${count} quiz questions with answers based on the following text. Focus exclusively on the concepts, tools, and rules described in the text, ignoring any mention of authors, creators, publication details, or ISSN.  
     ${text}  
 Format the response as a JSON array of objects, each with 'question' and 'answer' properties. For example: [{"question": "What tools are available for...", "answer": "Tools are available for..."}]  
 
