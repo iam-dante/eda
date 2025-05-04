@@ -138,7 +138,7 @@ const SimpleCodeBlock = ({
             {String(children).replace(/\n$/, "")}
           </SyntaxHighlighterComponent>
         ) : (
-          <pre className="p-3 overflow-auto text-sm text-gray-200 bg-gray-800">
+          <pre className="p-3 overflow-auto text-sm text-white bg-orange-800">
             {String(children).replace(/\n$/, "")}
           </pre>
         )}
@@ -160,7 +160,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         </SimpleCodeBlock>
       ) : (
         <code
-          className="bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 text-sm font-mono text-gray-800 dark:text-gray-200"
+          className="bg-orange-200 dark:bg-gray-800 rounded px-1.5 py-0.5 text-sm font-mono text-gray-800 dark:text-gray-200"
           {...props}
         >
           {children}
