@@ -61,7 +61,8 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          "https://eda-server-production.up.railway.app/upload",
+          // "https://eda-server-production.up.railway.app/upload",
+          "http://127.0.0.1:5000/upload",
           formData,
           {
             headers: {
@@ -179,10 +180,10 @@ These are just a few examples of plots that can be created using statistical dat
                           </div>
                         )}
 
-                        {/* <SimpleMarkdownRenderer
+                        <SimpleMarkdownRenderer
                           content={message.content.trim()}
-                        /> */}
-                        <p>{message.content.trim()}</p>
+                        />
+                        {/* <p>{message.content.trim()}</p> */}
 
                         {/* <MarkdownRenderer content={message.content}/> */}
 

@@ -2,8 +2,7 @@ import React, { memo, useEffect, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
-// Import styles only, we'll dynamically import the component
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+// We'll import the style when we need it
 
 interface MarkdownRendererProps {
   content: string;
@@ -20,15 +19,92 @@ const SimpleCodeBlock = ({
 }) => {
   const [SyntaxHighlighterComponent, setSyntaxHighlighterComponent] =
     useState<any>(null);
+  const [highlighterStyle, setHighlighterStyle] = useState<any>(null);
   const language = className
     ? className.replace("language-", "")
     : "javascript";
 
   useEffect(() => {
-    // Dynamically import the component
-    import("react-syntax-highlighter").then((module) => {
-      setSyntaxHighlighterComponent(() => module.PrismLight);
-    });
+    // Dynamically import just the component, and use a simple dark theme instead
+    const loadComponent = async () => {
+      const syntaxModule = await import("react-syntax-highlighter");
+      setSyntaxHighlighterComponent(() => syntaxModule.PrismLight);
+      
+      // Instead of importing a specific style, we'll use a simple style object
+      setHighlighterStyle({
+        'code[class*="language-"]': {
+          color: '#f8f8f2',
+          background: 'none',
+          textShadow: '0 1px rgba(0, 0, 0, 0.3)',
+          fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+          textAlign: 'left',
+          whiteSpace: 'pre',
+          wordSpacing: 'normal',
+          wordBreak: 'normal',
+          wordWrap: 'normal',
+          lineHeight: '1.5',
+          tabSize: 4,
+          hyphens: 'none'
+        },
+        'pre[class*="language-"]': {
+          color: '#f8f8f2',
+          background: '#282c34',
+          textShadow: '0 1px rgba(0, 0, 0, 0.3)',
+          fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+          textAlign: 'left',
+          whiteSpace: 'pre',
+          wordSpacing: 'normal',
+          wordBreak: 'normal',
+          wordWrap: 'normal',
+          lineHeight: '1.5',
+          tabSize: 4,
+          hyphens: 'none',
+          padding: '1em',
+          margin: '0.5em 0',
+          overflow: 'auto',
+          borderRadius: '0.3em'
+        },
+        ':not(pre) > code[class*="language-"]': {
+          background: '#282c34',
+          padding: '.1em',
+          borderRadius: '.3em',
+          whiteSpace: 'normal'
+        },
+        comment: { color: '#6a9955' },
+        prolog: { color: '#6a9955' },
+        doctype: { color: '#6a9955' },
+        cdata: { color: '#6a9955' },
+        punctuation: { color: '#d4d4d4' },
+        property: { color: '#9cdcfe' },
+        tag: { color: '#569cd6' },
+        boolean: { color: '#569cd6' },
+        number: { color: '#b5cea8' },
+        constant: { color: '#9cdcfe' },
+        symbol: { color: '#b5cea8' },
+        selector: { color: '#d7ba7d' },
+        'attr-name': { color: '#9cdcfe' },
+        string: { color: '#ce9178' },
+        char: { color: '#ce9178' },
+        builtin: { color: '#569cd6' },
+        inserted: { color: '#b5cea8' },
+        operator: { color: '#d4d4d4' },
+        entity: { color: '#9cdcfe', cursor: 'help' },
+        url: { color: '#9cdcfe' },
+        '.language-css .token.string': { color: '#ce9178' },
+        '.style .token.string': { color: '#ce9178' },
+        variable: { color: '#9cdcfe' },
+        atrule: { color: '#c586c0' },
+        'attr-value': { color: '#ce9178' },
+        function: { color: '#dcdcaa' },
+        keyword: { color: '#569cd6' },
+        regex: { color: '#d16969' },
+        important: { color: '#569cd6', fontWeight: 'bold' },
+        bold: { fontWeight: 'bold' },
+        italic: { fontStyle: 'italic' }
+      });
+    };
+    
+    loadComponent();
   }, []);
 
   return (
@@ -47,10 +123,10 @@ const SimpleCodeBlock = ({
         </button>
       </div>
       <div>
-        {SyntaxHighlighterComponent ? (
+        {SyntaxHighlighterComponent && highlighterStyle ? (
           <SyntaxHighlighterComponent
             language={language}
-            style={oneDark}
+            style={highlighterStyle}
             customStyle={{
               margin: 0,
               padding: "0.7rem",

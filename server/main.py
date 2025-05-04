@@ -193,15 +193,41 @@ def save_to_chromadb(file, fileID):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle file upload and store in ChromaDB."""
+    """Handle file upload and return extracted text."""
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in the request'}), 400
 
     file = request.files['file']
-    fileID = str(uuid.uuid4())  # Generate a unique ID for each file upload
+    
+    # Check if filename is empty
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Check if file is a PDF
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({'error': 'Only PDF files are supported'}), 400
 
-    response, status = save_to_chromadb(file, fileID)
-    return jsonify(response), status
+    try:
+        # Read file into memory
+        file_stream = BytesIO(file.read())
+        
+        # Extract text
+        sentences = create_resources_from_bytes(file_stream)
+        print(sentences)
+        
+        if not sentences:
+            return jsonify({'error': 'Failed to extract text from PDF'}), 500
+        
+        # Return extracted text
+        return jsonify({
+            'message': 'File processed and uploaded successfully',
+            'success': True,
+            'document': sentences,
+        })
+    
+    except Exception as e:
+        logging.error(f"Error processing PDF: {str(e)}")
+        return jsonify({'error': f'Error processing PDF: {str(e)}'}), 500
 
 def ask_groq(query, context=None, document=None):
     grok_prompt = f"""
