@@ -61,8 +61,8 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       try {
         const response = await axios.post(
-          // "https://eda-server-production.up.railway.app/upload",
-          "http://127.0.0.1:5000/upload",
+          "https://eda-server-production.up.railway.app/upload",
+          // "http://127.0.0.1:5000/upload",
           formData,
           {
             headers: {

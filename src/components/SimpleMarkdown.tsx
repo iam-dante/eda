@@ -25,12 +25,12 @@ const SimpleCodeBlock = ({
     : "javascript";
 
   useEffect(() => {
-    // Dynamically import just the component, and use a simple dark theme instead
+    // Dynamically import both the component and the style
     const loadComponent = async () => {
       const syntaxModule = await import("react-syntax-highlighter");
       setSyntaxHighlighterComponent(() => syntaxModule.PrismLight);
-      
-      // Instead of importing a specific style, we'll use a simple style object
+
+      // Define a custom style with orange background and syntax colors
       setHighlighterStyle({
         'code[class*="language-"]': {
           color: '#f8f8f2',
@@ -44,11 +44,11 @@ const SimpleCodeBlock = ({
           wordWrap: 'normal',
           lineHeight: '1.5',
           tabSize: 4,
-          hyphens: 'none'
+          hyphens: 'none',
         },
         'pre[class*="language-"]': {
           color: '#f8f8f2',
-          background: '#282c34',
+          background: '#ff9800', // Orange background
           textShadow: '0 1px rgba(0, 0, 0, 0.3)',
           fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
           textAlign: 'left',
@@ -62,13 +62,13 @@ const SimpleCodeBlock = ({
           padding: '1em',
           margin: '0.5em 0',
           overflow: 'auto',
-          borderRadius: '0.3em'
+          borderRadius: '0.3em',
         },
         ':not(pre) > code[class*="language-"]': {
-          background: '#282c34',
+          background: '#ff9800', // Orange background
           padding: '.1em',
           borderRadius: '.3em',
-          whiteSpace: 'normal'
+          whiteSpace: 'normal',
         },
         comment: { color: '#6a9955' },
         prolog: { color: '#6a9955' },
@@ -100,10 +100,10 @@ const SimpleCodeBlock = ({
         regex: { color: '#d16969' },
         important: { color: '#569cd6', fontWeight: 'bold' },
         bold: { fontWeight: 'bold' },
-        italic: { fontStyle: 'italic' }
+        italic: { fontStyle: 'italic' },
       });
     };
-    
+
     loadComponent();
   }, []);
 
