@@ -12,7 +12,7 @@
     "@ai-sdk/groq": "^1.1.14",
     "@ai-sdk/openai": "^1.2.5",
     "@ai-sdk/react": "^1.1.23",
-    "@headlessui/react": "^2.2.0",
+    "@headlessui/react": "^2.2.2",
     "@radix-ui/react-toast": "^1.2.5",
     "@types/react-syntax-highlighter": "^15.5.13",
     "ai": "^4.1.61",
