@@ -106,9 +106,7 @@ const SimpleCodeBlock = ({
         italic: { fontStyle: "italic" },
       });
 
-      // Removed explicit language imports and registration
-      // Syntax highlighting for specific languages might not work
-      // unless languages are imported/registered elsewhere in your app.
+      // Removed explicit language imports and registration as requested
     };
 
     loadComponent();
@@ -146,7 +144,7 @@ const SimpleCodeBlock = ({
             {String(children).replace(/\n$/, "")}
           </SyntaxHighlighterComponent>
         ) : (
-          // Fallback if syntax highlighter not loaded or languages aren't registered
+          // Fallback if syntax highlighter not loaded
           <pre className="p-3 overflow-auto text-sm text-white bg-orange-800">
             {String(children).replace(/\n$/, "")}
           </pre>
@@ -172,7 +170,9 @@ const CustomListItem = ({ children, ...props }: any) => {
     ) {
       // Replace the first paragraph with its contents
       const restChildren = children.slice(1);
-      const paragraphContents = firstChild.props.children;
+      const paragraphContents = React.isValidElement(firstChild)
+        ? (firstChild as React.ReactElement).props.children
+       : null;
       modifiedChildren = [paragraphContents, ...restChildren];
     }
   }
@@ -184,63 +184,109 @@ const CustomListItem = ({ children, ...props }: any) => {
   );
 };
 
-// This function preprocesses the Markdown content to fix common list rendering issues
+// This function preprocesses the Markdown content, now with awareness of code blocks,
+// to fix common list rendering issues, particularly handling streaming text.
 const preprocessMarkdown = (content: string): string => {
   const lines = content.split("\n");
   const processedLines: string[] = [];
+  let inFencedCodeBlock = false; // State to track if we are inside a fenced code block
+  // Note: Handling indentation of fenced code blocks nested in lists precisely is complex
+  // without a full markdown parser state. This attempts a basic detection.
+  let fencedCodeBlockIndent = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmedLine = line.trim();
 
+    // Check for the start or end of a fenced code block (allowing up to 3 spaces before the fence)
+    const fencedCodeMatch = line.match(/^(\s*)(```+|~~~+)\s*(\S*)/); // Capture leading spaces and fence type
+
+    if (fencedCodeMatch) {
+      const leadingSpaces = fencedCodeMatch[1];
+      const fence = fencedCodeMatch[2];
+      const fenceIndent = leadingSpaces.length;
+
+      if (!inFencedCodeBlock) {
+        // Starting a fenced code block
+        inFencedCodeBlock = true;
+        // Store the indent of the opening fence
+        fencedCodeBlockIndent = fenceIndent;
+        processedLines.push(line); // Add the fence line as is
+      } else {
+        // Ending a fenced code block
+        // A closing fence must have indentation less than or equal to the opening fence
+        if (fenceIndent <= fencedCodeBlockIndent) {
+          inFencedCodeBlock = false;
+          fencedCodeBlockIndent = 0; // Reset indent state
+          processedLines.push(line); // Add the closing fence line as is
+        } else {
+          // This fence is indented more than the opening fence, treat it as part of the code block content
+          processedLines.push(line);
+        }
+      }
+      continue; // Skip further processing for fence lines
+    }
+
+    if (inFencedCodeBlock) {
+      // If inside a fenced code block, add the line as is.
+      // Markdown handles indentation within fenced code blocks based on the opening fence.
+      processedLines.push(line);
+      continue; // Skip further processing for lines inside fences
+    }
+
+    // --- Start of List Preprocessing Logic (only if NOT in a code block) ---
+
     // Check for a line that is just a list marker (possibly with trailing space)
     const markerOnlyMatch = trimmedLine.match(/^(\d+\.|[*+-])\s*$/);
 
     if (markerOnlyMatch && i + 1 < lines.length) {
-      // Found a marker-only line. Check the next line.
       const nextLine = lines[i + 1];
       const trimmedNextLine = nextLine.trim();
 
-      // If the next line is not empty and not a new list item marker...
-      if (trimmedNextLine !== "" && !trimmedNextLine.match(/^(\d+\.|[*+-])/)) {
-        // It's likely the start of the content for the list item from the marker-only line.
+      // If the next line is not empty, not a new list item marker, AND NOT the start of a code fence...
+      if (
+        trimmedNextLine !== "" &&
+        !trimmedNextLine.match(/^(\d+\.|[*+-])/) &&
+        // Ensure the next line isn't a code fence start
+        !nextLine.match(/^(\s*)(```+|~~~+)\s*(\S*)/)
+      ) {
         // Combine the marker and the next line, adding a space.
-        // Use original nextLine to preserve its leading space if any (though trim was used for check)
+        // Use original nextLine to preserve its potential leading space if any (though trim was used for check)
         processedLines.push(`${markerOnlyMatch[1]} ${nextLine}`);
 
-        // Now, process any subsequent lines as continuations (indent them)
-        let j = i + 2; // Start checking from the line after the one we just combined
+        // Process subsequent continuation lines (indent them)
+        let j = i + 2;
         while (j < lines.length) {
           const currentContinuationLine = lines[j];
           const trimmedContinuationLine = currentContinuationLine.trim();
-
-          // Stop if we hit a blank line or a new list item marker
+          // Stop if blank, new list item, OR A CODE FENCE
           if (
             trimmedContinuationLine === "" ||
-            trimmedContinuationLine.match(/^(\d+\.|[*+-])/)
+            trimmedContinuationLine.match(/^(\d+\.|[*+-])/) ||
+            // Stop if the line is a code fence start
+            currentContinuationLine.match(/^(\s*)(```+|~~~+)\s*(\S*)/)
           ) {
             break;
           }
 
-          // Add the continuation line, indented by 4 spaces to make it part of the list item
+          // Add indented continuation line
           processedLines.push(`    ${currentContinuationLine}`);
-
           j++;
         }
-
-        // Skip the lines that were just processed as part of this item
-        i = j - 1; // The outer loop's i++ will increment it to the correct next line
-      } else {
-        // The next line is blank or a new list item. Process the current line normally.
-        processedLines.push(line);
+        // Adjust the outer loop index to skip the lines that were just processed as continuations
+        i = j - 1;
+        continue; // Move to the next outer loop iteration
       }
-    } else {
-      // Normal line, or a list item line that is not just a marker at the end
-      processedLines.push(line);
     }
+
+    // If the line was not a marker-only line handled above, and not a code block line, add it directly.
+    processedLines.push(line);
+
+    // --- End of List Preprocessing Logic ---
   }
 
-  // Additional pass to fix lines starting with marker followed immediately by newline
+  // Final pass to catch any remaining cases of marker immediately followed by newline
+  // This might be redundant with the line-by-line pass but can serve as a fallback.
   const finalProcessedContent = processedLines.join("\n");
   return finalProcessedContent
     .replace(/^(\d+\.)\s*\n+/gm, "$1 ")
@@ -251,7 +297,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   isUser = false,
 }) => {
-  // Preprocess the markdown content to fix line break issues in lists
+  // Preprocess the markdown content to fix list and code block rendering issues
   const processedContent = preprocessMarkdown(content);
 
   const components: Partial<Components> = {
