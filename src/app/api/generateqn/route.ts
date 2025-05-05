@@ -5,7 +5,7 @@ import { OpenAI } from "openai";
 // const groq = new Groq({
 //   apiKey: process.env.GROQ_API_KEY,
 // });
-
+export const maxDuration = 60;
 export async function POST(req: Request) {
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,}

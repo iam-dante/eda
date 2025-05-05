@@ -40,6 +40,7 @@ export const GenerateCards = () => {
       // First, extract text using Flask API
       const extractResponse = await axios.post(
         "https://eda-server-production.up.railway.app/extract_text",
+        // "http://127.0.0.1:5000/extract_text",
         formData,
         {
           headers: {
