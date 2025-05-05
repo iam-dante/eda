@@ -1,31 +1,42 @@
-# AI-Powered Learning Assistant
+# AI-Powered Learning Assistant 
 
-## 📚 Overview
-The **AI-Powered Learning Assistant** is an intelligent tool designed to enhance learning experiences by leveraging Retrieval-Augmented Generation (RAG). Users can upload documents, and the assistant processes the content to generate conversational responses, enabling an interactive learning experience.
+![EDA Screenshot](./eda.png)
+## Overview
+The AI-Powered Learning Assistant is an intelligent tool designed to enhance learning experiences by leveraging Retrieval-Augmented Generation (RAG). Users can upload documents, and the assistant processes the content to generate conversational responses, enabling an interactive learning experience. In addition to the chat-based interface, the platform also includes a flashcard feature that helps users reinforce key concepts and retain information more effectively.
 
-## 🚀 Features
+**Live Demo:** [eda.briantemu.dev](https://eda.briantemu.dev)
+
+## Features
 - **Document-Based Learning** – Users upload documents, and the AI generates interactive responses.
 - **AI-Powered Q&A** – Provides answers and explanations based on the document's content.
 - **Content Summarization** – Extracts key points from uploaded materials.
 - **Interactive Chatbot** – Engages users in meaningful discussions based on document context.
+- **Flashcard Generator** – Generate flashcards with answers and explanation.
 
-## 🛠️ Technology Stack
+
+## Limitations
+
+- Image Understanding: Cannot interpret images, intricate visuals, or non-textual graphics (e.g., diagrams, abstract art).
+- Table Processing: Struggles to accurately extract or interpret data from complex tables.
+- Dont handle multiple document uploads (current only handles pdf)
+
+## Technology Stack
 - **Backend:** Python, Flask/FastAPI, LangChain
-- **Frontend:** Next.js
-- **Database:** Vector Databases (--)
-- **AI Models:**  BERT, Transformer-based models
-- **Deployment:** Vercel, Render
+- **Frontend:** Next.js, TailwindCSS
+- **Database:** Vector Databases (ChromaDB)
+- **AI Models:**  Transformer-based models, LLM
+- **Deployment:** Vercel, Railway
 
-## 📥 Installation
+## Installation
 ### Clone the Repository
 ```sh
-git clone https://github.com/iam-dante/web-rag.git
-cd web-rag
+git clone https://github.com/iam-dante/eda.git
+cd eda
 ```
 
 ### Install Dependencies
 ```sh
-pip install -r requirements.txt
+pip install -r ./server/requirements.txt
 ```
 
 ### Run the Application
@@ -37,25 +48,11 @@ python ./server/app.py
 yarn run dev
 ```
 
-## 🧠 Usage
+## Usage
 1. Upload a document through the web interface.
 2. Interact with the chatbot to receive responses based on the document's content.
 3. Get summaries, explanations, and insights from the uploaded material.
 4. Engage in a dynamic learning experience with AI-driven conversations.
 
-## 🤝 Contributing
-We welcome contributions! Follow these steps:
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-branch`
-3. Commit your changes: `git commit -m 'Add a new feature'`
-4. Push to your branch: `git push origin feature-branch`
-5. Open a pull request.
-
-## 📜 License
+##  License
 This project is licensed under the [MIT License](LICENSE).
-
-## 📞 Contact
-For any inquiries or feedback, reach out to [iq58974@umbc.edu](mailto:iq58974@umbc.edu) or open an issue on GitHub.
-
-Happy Learning! 🎓🚀
-
