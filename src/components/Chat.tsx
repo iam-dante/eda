@@ -17,18 +17,18 @@ export default function Chat({ chatId }: { chatId: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [document, setDocument] = useState<string>("");
   const { toast } = useToast();
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    body: {
-      document: document,
-    },
-  });
+  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    useChat({
+      body: {
+        document: document,
+      },
+    });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -170,9 +170,7 @@ These are just a few examples of plots that can be created using statistical dat
                       >
                         {message.role === "assistant" && (
                           <div>
-                            {" "}
                             <div className="flex flex-col">
-                              {" "}
                               <h1 className="font-extrabold text-md text-orange-600 font-barriecito">
                                 Eda
                               </h1>
@@ -183,11 +181,7 @@ These are just a few examples of plots that can be created using statistical dat
                         <SimpleMarkdownRenderer
                           content={message.content.trim()}
                         />
-                        {/* <p>{message.content.trim()}</p> */}
 
-                        {/* <MarkdownRenderer content={message.content}/> */}
-
-                        {/* <p>{message.content}</p> */}
                         {message.role === "user" && attachmentUrl && (
                           <div className="">
                             <a
@@ -205,8 +199,15 @@ These are just a few examples of plots that can be created using statistical dat
                   ))}
 
                   {isLoading && (
-                    <div className="flex">
-                      <Ellipsis className="h-8 w-8 text-black animate-pulse" />
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-orange-100 px-4 py-2 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
+                          <span className="text-orange-600">
+                            Eda is typing...
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                   <div ref={bottomRef} />

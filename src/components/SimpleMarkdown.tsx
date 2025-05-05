@@ -33,74 +33,76 @@ const SimpleCodeBlock = ({
       // Define a custom style with orange background and syntax colors
       setHighlighterStyle({
         'code[class*="language-"]': {
-          color: '#f8f8f2',
-          background: 'none',
-          textShadow: '0 1px rgba(0, 0, 0, 0.3)',
-          fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
-          textAlign: 'left',
-          whiteSpace: 'pre',
-          wordSpacing: 'normal',
-          wordBreak: 'normal',
-          wordWrap: 'normal',
-          lineHeight: '1.5',
+          color: "#f8f8f2",
+          background: "none",
+          textShadow: "0 1px rgba(0, 0, 0, 0.3)",
+          fontFamily:
+            "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+          textAlign: "left",
+          whiteSpace: "pre",
+          wordSpacing: "normal",
+          wordBreak: "normal",
+          wordWrap: "normal",
+          lineHeight: "1.5",
           tabSize: 4,
-          hyphens: 'none',
+          hyphens: "none",
         },
         'pre[class*="language-"]': {
-          color: '#f8f8f2',
-          background: '#ff9800', // Orange background
-          textShadow: '0 1px rgba(0, 0, 0, 0.3)',
-          fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
-          textAlign: 'left',
-          whiteSpace: 'pre',
-          wordSpacing: 'normal',
-          wordBreak: 'normal',
-          wordWrap: 'normal',
-          lineHeight: '1.5',
+          color: "#f8f8f2",
+          background: "#ff9800", // Orange background
+          textShadow: "0 1px rgba(0, 0, 0, 0.3)",
+          fontFamily:
+            "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+          textAlign: "left",
+          whiteSpace: "pre",
+          wordSpacing: "normal",
+          wordBreak: "normal",
+          wordWrap: "normal",
+          lineHeight: "1.5",
           tabSize: 4,
-          hyphens: 'none',
-          padding: '1em',
-          margin: '0.5em 0',
-          overflow: 'auto',
-          borderRadius: '0.3em',
+          hyphens: "none",
+          padding: "1em",
+          margin: "0.5em 0",
+          overflow: "auto",
+          borderRadius: "0.3em",
         },
         ':not(pre) > code[class*="language-"]': {
-          background: '#ff9800', // Orange background
-          padding: '.1em',
-          borderRadius: '.3em',
-          whiteSpace: 'normal',
+          background: "#ff9800", // Orange background
+          padding: ".1em",
+          borderRadius: ".3em",
+          whiteSpace: "normal",
         },
-        comment: { color: '#6a9955' },
-        prolog: { color: '#6a9955' },
-        doctype: { color: '#6a9955' },
-        cdata: { color: '#6a9955' },
-        punctuation: { color: '#d4d4d4' },
-        property: { color: '#9cdcfe' },
-        tag: { color: '#569cd6' },
-        boolean: { color: '#569cd6' },
-        number: { color: '#b5cea8' },
-        constant: { color: '#9cdcfe' },
-        symbol: { color: '#b5cea8' },
-        selector: { color: '#d7ba7d' },
-        'attr-name': { color: '#9cdcfe' },
-        string: { color: '#ce9178' },
-        char: { color: '#ce9178' },
-        builtin: { color: '#569cd6' },
-        inserted: { color: '#b5cea8' },
-        operator: { color: '#d4d4d4' },
-        entity: { color: '#9cdcfe', cursor: 'help' },
-        url: { color: '#9cdcfe' },
-        '.language-css .token.string': { color: '#ce9178' },
-        '.style .token.string': { color: '#ce9178' },
-        variable: { color: '#9cdcfe' },
-        atrule: { color: '#c586c0' },
-        'attr-value': { color: '#ce9178' },
-        function: { color: '#dcdcaa' },
-        keyword: { color: '#569cd6' },
-        regex: { color: '#d16969' },
-        important: { color: '#569cd6', fontWeight: 'bold' },
-        bold: { fontWeight: 'bold' },
-        italic: { fontStyle: 'italic' },
+        comment: { color: "#6a9955" },
+        prolog: { color: "#6a9955" },
+        doctype: { color: "#6a9955" },
+        cdata: { color: "#6a9955" },
+        punctuation: { color: "#d4d4d4" },
+        property: { color: "#9cdcfe" },
+        tag: { color: "#569cd6" },
+        boolean: { color: "#569cd6" },
+        number: { color: "#b5cea8" },
+        constant: { color: "#9cdcfe" },
+        symbol: { color: "#b5cea8" },
+        selector: { color: "#d7ba7d" },
+        "attr-name": { color: "#9cdcfe" },
+        string: { color: "#ce9178" },
+        char: { color: "#ce9178" },
+        builtin: { color: "#569cd6" },
+        inserted: { color: "#b5cea8" },
+        operator: { color: "#d4d4d4" },
+        entity: { color: "#9cdcfe", cursor: "help" },
+        url: { color: "#9cdcfe" },
+        ".language-css .token.string": { color: "#ce9178" },
+        ".style .token.string": { color: "#ce9178" },
+        variable: { color: "#9cdcfe" },
+        atrule: { color: "#c586c0" },
+        "attr-value": { color: "#ce9178" },
+        function: { color: "#dcdcaa" },
+        keyword: { color: "#569cd6" },
+        regex: { color: "#d16969" },
+        important: { color: "#569cd6", fontWeight: "bold" },
+        bold: { fontWeight: "bold" },
+        italic: { fontStyle: "italic" },
       });
     };
 
@@ -147,10 +149,43 @@ const SimpleCodeBlock = ({
   );
 };
 
+// Custom CSS to fix the list display issue
+const customListStyles = `
+  .markdown-content ol {
+    list-style-position: inside;
+    padding-left: 1rem;
+  }
+  
+  .markdown-content ul {
+    list-style-position: inside;
+    padding-left: 1rem;
+  }
+  
+  .markdown-content li > p {
+    display: inline;
+    margin: 0;
+  }
+`;
+
 const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   isUser = false,
 }) => {
+  // Insert the custom styles for lists
+  useEffect(() => {
+    const styleId = "markdown-list-style";
+    if (!document.getElementById(styleId)) {
+      const styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      styleElement.innerHTML = customListStyles;
+      document.head.appendChild(styleElement);
+    }
+
+    return () => {
+      // Optional cleanup if needed
+    };
+  }, []);
+
   const components: Partial<Components> = {
     code({ node, className, children, ...props }: any) {
       const hasLanguage = /language-\w+/.test(className || "");
@@ -169,13 +204,13 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     },
     pre: ({ children }) => <>{children}</>,
     p: ({ children }) => (
-      <p className="text-gray-800 dark:text-gray-200 text-base leading-relaxed ">
+      <p className="text-gray-800 dark:text-gray-200 text-base mb-2">
         {children}
       </p>
     ),
     h1: ({ children, ...props }) => (
       <h1
-        className="text-3xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
+        className="text-3xl font-semibold text-gray-900 dark:text-white mt-2 mb-0.5"
         {...props}
       >
         {children}
@@ -183,7 +218,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h2: ({ children, ...props }) => (
       <h2
-        className="text-2xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
+        className="text-2xl font-semibold text-gray-900 dark:text-white mt-2 mb-0.5"
         {...props}
       >
         {children}
@@ -191,7 +226,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h3: ({ children, ...props }) => (
       <h3
-        className="text-xl font-semibold text-gray-900 dark:text-white mt-4 mb-1"
+        className="text-xl font-semibold text-gray-900 dark:text-white mt-2 mb-0.5"
         {...props}
       >
         {children}
@@ -199,7 +234,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     h4: ({ children, ...props }) => (
       <h4
-        className="text-lg font-semibold text-gray-900 dark:text-white mt-4 mb-1"
+        className="text-lg font-semibold text-gray-900 dark:text-white mt-2 mb-0.5"
         {...props}
       >
         {children}
@@ -223,7 +258,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ul: ({ children, ...props }) => (
       <ul
-        className="list-disc pl-5 my-1 text-gray-800 dark:text-gray-200"
+        className="list-disc text-gray-800 dark:text-gray-200 mb-2"
         {...props}
       >
         {children}
@@ -231,14 +266,14 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ol: ({ children, ...props }) => (
       <ol
-        className="list-decimal pl-5 my-1 text-gray-800 dark:text-gray-200"
+        className="list-decimal text-gray-800 dark:text-gray-200 mb-2"
         {...props}
       >
         {children}
       </ol>
     ),
     li: ({ children, ...props }) => (
-      <li className="text-base py-0.5 mb-0.5" {...props}>
+      <li className="text-base mb-1" {...props}>
         {children}
       </li>
     ),
