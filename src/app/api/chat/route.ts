@@ -38,7 +38,7 @@ ${lastUserMessage}
 `;
 
     // const model = groq("mistral-saba-24b");
-    const model = openai("gpt-4o");
+    const model = openai("gpt-4o-mini");
     // const { textStream } = streamText({
     //   model: openai("gpt-4o"),
     //   prompt: "Invent a new holiday and describe its traditions.",

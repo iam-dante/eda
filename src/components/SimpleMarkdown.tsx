@@ -25,12 +25,13 @@ const SimpleCodeBlock = ({
     : "javascript";
 
   useEffect(() => {
-    // Dynamically import both the component and the style
+    // Dynamically import the component and set the style
     const loadComponent = async () => {
       const syntaxModule = await import("react-syntax-highlighter");
+      // Keep PrismLight as used previously
       setSyntaxHighlighterComponent(() => syntaxModule.PrismLight);
 
-      // Define a custom style with orange background and syntax colors
+      // Define the custom style
       setHighlighterStyle({
         'code[class*="language-"]': {
           color: "#f8f8f2",
@@ -104,6 +105,10 @@ const SimpleCodeBlock = ({
         bold: { fontWeight: "bold" },
         italic: { fontStyle: "italic" },
       });
+
+      // Removed explicit language imports and registration
+      // Syntax highlighting for specific languages might not work
+      // unless languages are imported/registered elsewhere in your app.
     };
 
     loadComponent();
@@ -126,6 +131,7 @@ const SimpleCodeBlock = ({
       </div>
       <div>
         {SyntaxHighlighterComponent && highlighterStyle ? (
+          // Pass the language and style to the loaded component
           <SyntaxHighlighterComponent
             language={language}
             style={highlighterStyle}
@@ -133,13 +139,14 @@ const SimpleCodeBlock = ({
               margin: 0,
               padding: "0.7rem",
               fontSize: "0.875rem",
-              lineHeight: 0.1,
+              lineHeight: "1.5", // Adjusted line height for readability
               borderRadius: 0,
             }}
           >
             {String(children).replace(/\n$/, "")}
           </SyntaxHighlighterComponent>
         ) : (
+          // Fallback if syntax highlighter not loaded or languages aren't registered
           <pre className="p-3 overflow-auto text-sm text-white bg-orange-800">
             {String(children).replace(/\n$/, "")}
           </pre>
@@ -149,42 +156,103 @@ const SimpleCodeBlock = ({
   );
 };
 
-// Custom CSS to fix the list display issue
-const customListStyles = `
-  .markdown-content ol {
-    list-style-position: inside;
-    padding-left: 1rem;
+// Custom component for fixing list item display
+const CustomListItem = ({ children, ...props }: any) => {
+  // If the first child is a paragraph, we need to handle it specially
+  let modifiedChildren = children;
+
+  if (Array.isArray(children) && children.length > 0) {
+    // Check if first element is a <p> tag
+    const firstChild = children[0];
+    // Check if it's a React element and its type is 'p'
+    if (
+      React.isValidElement(firstChild) &&
+      typeof firstChild.type === "string" &&
+      firstChild.type === "p"
+    ) {
+      // Replace the first paragraph with its contents
+      const restChildren = children.slice(1);
+      const paragraphContents = firstChild.props.children;
+      modifiedChildren = [paragraphContents, ...restChildren];
+    }
   }
-  
-  .markdown-content ul {
-    list-style-position: inside;
-    padding-left: 1rem;
+
+  return (
+    <li className="text-base mb-1" {...props}>
+      {modifiedChildren}
+    </li>
+  );
+};
+
+// This function preprocesses the Markdown content to fix common list rendering issues
+const preprocessMarkdown = (content: string): string => {
+  const lines = content.split("\n");
+  const processedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // Check for a line that is just a list marker (possibly with trailing space)
+    const markerOnlyMatch = trimmedLine.match(/^(\d+\.|[*+-])\s*$/);
+
+    if (markerOnlyMatch && i + 1 < lines.length) {
+      // Found a marker-only line. Check the next line.
+      const nextLine = lines[i + 1];
+      const trimmedNextLine = nextLine.trim();
+
+      // If the next line is not empty and not a new list item marker...
+      if (trimmedNextLine !== "" && !trimmedNextLine.match(/^(\d+\.|[*+-])/)) {
+        // It's likely the start of the content for the list item from the marker-only line.
+        // Combine the marker and the next line, adding a space.
+        // Use original nextLine to preserve its leading space if any (though trim was used for check)
+        processedLines.push(`${markerOnlyMatch[1]} ${nextLine}`);
+
+        // Now, process any subsequent lines as continuations (indent them)
+        let j = i + 2; // Start checking from the line after the one we just combined
+        while (j < lines.length) {
+          const currentContinuationLine = lines[j];
+          const trimmedContinuationLine = currentContinuationLine.trim();
+
+          // Stop if we hit a blank line or a new list item marker
+          if (
+            trimmedContinuationLine === "" ||
+            trimmedContinuationLine.match(/^(\d+\.|[*+-])/)
+          ) {
+            break;
+          }
+
+          // Add the continuation line, indented by 4 spaces to make it part of the list item
+          processedLines.push(`    ${currentContinuationLine}`);
+
+          j++;
+        }
+
+        // Skip the lines that were just processed as part of this item
+        i = j - 1; // The outer loop's i++ will increment it to the correct next line
+      } else {
+        // The next line is blank or a new list item. Process the current line normally.
+        processedLines.push(line);
+      }
+    } else {
+      // Normal line, or a list item line that is not just a marker at the end
+      processedLines.push(line);
+    }
   }
-  
-  .markdown-content li > p {
-    display: inline;
-    margin: 0;
-  }
-`;
+
+  // Additional pass to fix lines starting with marker followed immediately by newline
+  const finalProcessedContent = processedLines.join("\n");
+  return finalProcessedContent
+    .replace(/^(\d+\.)\s*\n+/gm, "$1 ")
+    .replace(/^([*+-])\s*\n+/gm, "$1 ");
+};
 
 const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   isUser = false,
 }) => {
-  // Insert the custom styles for lists
-  useEffect(() => {
-    const styleId = "markdown-list-style";
-    if (!document.getElementById(styleId)) {
-      const styleElement = document.createElement("style");
-      styleElement.id = styleId;
-      styleElement.innerHTML = customListStyles;
-      document.head.appendChild(styleElement);
-    }
-
-    return () => {
-      // Optional cleanup if needed
-    };
-  }, []);
+  // Preprocess the markdown content to fix line break issues in lists
+  const processedContent = preprocessMarkdown(content);
 
   const components: Partial<Components> = {
     code({ node, className, children, ...props }: any) {
@@ -258,7 +326,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ul: ({ children, ...props }) => (
       <ul
-        className="list-disc text-gray-800 dark:text-gray-200 mb-2"
+        className="list-disc pl-5 text-gray-800 dark:text-gray-200 mb-2"
         {...props}
       >
         {children}
@@ -266,17 +334,13 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     ),
     ol: ({ children, ...props }) => (
       <ol
-        className="list-decimal text-gray-800 dark:text-gray-200 mb-2"
+        className="list-decimal pl-5 text-gray-800 dark:text-gray-200 mb-2"
         {...props}
       >
         {children}
       </ol>
     ),
-    li: ({ children, ...props }) => (
-      <li className="text-base mb-1" {...props}>
-        {children}
-      </li>
-    ),
+    li: CustomListItem,
     a: ({ href, children, ...props }) => (
       <Link
         href={href || "#"}
@@ -330,7 +394,7 @@ const SimpleMarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   return (
     <div className={`markdown-content ${isUser ? "user" : "assistant"} py-1`}>
       <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );
