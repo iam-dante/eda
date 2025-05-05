@@ -26,7 +26,7 @@ Format the response as a JSON array of objects, each with 'question', 'answer', 
 RETURN ONLY THE JSON ARRAY.`;
 
     const completion = await client.chat.completions.create({
-      model: "gpt-40-mini",
+      model: "gpt-4.1",
       messages: [
         {
           role: "user",
