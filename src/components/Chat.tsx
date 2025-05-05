@@ -23,7 +23,7 @@ export default function Chat({ chatId }: { chatId: string }) {
   const { toast } = useToast();
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+  const { messages, input, handleInputChange, handleSubmit, status, isLoading } =
     useChat({
       body: {
         document: document,
@@ -198,7 +198,20 @@ These are just a few examples of plots that can be created using statistical dat
                     </div>
                   ))}
 
-                  {isLoading && (
+                  {status == "submitted" && (
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-orange-100 px-4 py-2 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
+                          <span className="text-orange-600">
+                            Eda is Thinking
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {status == "streaming" && (
                     <div className="flex items-center space-x-2">
                       <div className="bg-orange-100 px-4 py-2 rounded-lg">
                         <div className="flex items-center gap-2">
