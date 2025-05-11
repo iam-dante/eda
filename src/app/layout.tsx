@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RAG Chat App",
-  description: "Chat with a PDFs",
+  title: "Eda - Your AI Learning Assistant",
+  description: "Eda - Chat with a PDFs",
 };
 
 export default function RootLayout({
