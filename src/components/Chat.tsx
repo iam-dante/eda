@@ -97,31 +97,22 @@ export default function Chat({ chatId }: { chatId: string }) {
     }
   };
 
-  const test = `Based on the provided document, it appears that the user can create various types of plots and visualizations using statistical data. The document mentions the following:
-
-
-- **Side-by-side boxplot**: A plot that compares two or more datasets side by side.
-- **Scatterplot with additional variables**: A plot that displays the relationship between two variables, with additional information encoded in symbol type and/or color.
-
-
-These are just a few examples of plots that can be created using statistical data. The document does not provide an exhaustive list of all possible plots that can be made, but it suggests that various types of visualizations can be used to explore and understand statistical data.`;
-
   return (
     <div key={chatId} className="relative h-screen py-4 bg-orange-50">
-      <div className="absolute h-12  px-8">
+      <div className="absolute h-12 px-4 sm:px-8">
         <Link href={"/"}>
-          <h1 className="font-extrabold text-5xl text-orange-600 font-barriecito">
+          <h1 className="font-extrabold text-4xl sm:text-5xl text-orange-600 font-barriecito hidden md:block">
             Eda
           </h1>
         </Link>
       </div>
-      <TabGroup as={"div"} className="flex flex-col h-full ">
-        <TabList className="flex space-x-1 rounded-md p-2 mx-4 md:mx-[40%] border-2 border-gray-500 ">
+      <TabGroup as={"div"} className="flex flex-col h-full">
+        <TabList className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 rounded-md p-2 mx-2 sm:mx-4 md:mx-[40%] border-2 border-gray-500">
           <Tab
             className={({ selected }) =>
               cn(
                 "w-full rounded-sm py-2.5 text-md font-semibold leading-5",
-                "ring-white ring-opacity-60 ring-offset-2  focus:outline-none",
+                "ring-white ring-opacity-60 ring-offset-2 focus:outline-none",
                 selected
                   ? "bg-orange-600 shadow text-white"
                   : "text-black hover:bg-white/[0.12] hover:text-orange-600"
@@ -134,7 +125,7 @@ These are just a few examples of plots that can be created using statistical dat
             className={({ selected }) =>
               cn(
                 "w-full rounded-sm py-2.5 text-md font-semibold leading-5",
-                "ring-white ring-opacity-60 ring-offset-2  focus:outline-none",
+                "ring-white ring-opacity-60 ring-offset-2 focus:outline-none",
                 selected
                   ? "bg-orange-600 shadow text-white"
                   : "text-black hover:bg-white/[0.12] hover:text-orange-600"
@@ -146,21 +137,33 @@ These are just a few examples of plots that can be created using statistical dat
         </TabList>
 
         <TabPanels className="flex-1 overflow-hidden">
-          <TabPanel className="h-full">
+          <TabPanel className="h-full py-4">
             <div className="h-full mt-2 overflow-hidden">
-              <div className="h-[85%] overflow-y-auto px-4 md:px-64">
+              <div className="h-[85%] overflow-y-auto px-2 sm:px-4 md:px-64">
                 {/* {<SimpleMarkdownRenderer content={test} />} */}
-                <div className="space-y-2 flex flex-col min-h-full w-full md:max-w-[calc(100vw-512px)]">
+                <div className="space-y-2 flex flex-col min-h-full w-full sm:md:max-w-[calc(100vw-512px)]">
+                  {/* Show upload prompt if no document uploaded yet */}
+                  {!isInitialUploadDone && !attachment && (
+                    <div className="flex flex-col items-center justify-center h-[60vh] text-center text-orange-600">
+                      <div className="text-3xl mb-2 font-barriecito">📄</div>
+                      <div className="font-semibold text-lg mb-1">
+                        Upload a document to start chatting!
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Please upload a file using the paperclip button below to interact with Eda.
+                      </div>
+                    </div>
+                  )}
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className="grid justify-items-stretch"
                     >
                       <div
-                        className={`px-3 md:px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
+                        className={`px-2 sm:px-3 md:px-4 py-1 rounded-l-md rounded-tr-md font-sans font-medium break-words whitespace-pre-wrap ${
                           message.role === "user"
-                            ? "bg-orange-200 justify-self-end max-w-[85%] md:max-w-[70%]"
-                            : "max-w-[95%] md:max-w-[90%] text-[15px] md:text-[17px] space-y-2"
+                            ? "bg-orange-200 justify-self-end max-w-[95%] sm:max-w-[85%] md:max-w-[70%]"
+                            : "max-w-[98%] sm:max-w-[95%] md:max-w-[90%] text-[15px] md:text-[17px] space-y-2"
                         }`}
                         style={{
                           overflowWrap: "break-word",
@@ -227,11 +230,11 @@ These are just a few examples of plots that can be created using statistical dat
                 </div>
               </div>
 
-              <div className="h-[15%] py-4 px-4 md:px-72">
+              <div className="h-[15%] py-2 sm:py-4 px-2 sm:px-4 md:px-72">
                 <form onSubmit={handleSubmit} className="flex items-end w-full">
                   <div className="w-full flex justify-center items-center">
-                    <div className="h-16 md:h-24 py-1 w-full bg-white rounded-md pl-3 md:pl-6 pr-2 md:pr-3 flex items-center border-2 border-black">
-                      <div className="flex items-center w-full h-24 py-2">
+                    <div className="h-14 sm:h-16 md:h-24 py-1 w-full bg-white rounded-md pl-2 sm:pl-3 md:pl-6 pr-1 sm:pr-2 md:pr-3 flex items-center border-2 border-black">
+                      <div className="flex items-center w-full h-14 sm:h-24 py-5">
                         <input
                           type="text"
                           disabled={
@@ -251,7 +254,7 @@ These are just a few examples of plots that can be created using statistical dat
                               : "Type message..."
                           }
                           className={cn(
-                            "w-full h-full text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0",
+                            "w-full h-full text-black bg-white border-white font-sans font-medium focus:outline-none focus:ring-0 border-0 text-sm sm:text-base ",
                             !isInitialUploadDone &&
                               !attachment &&
                               "cursor-not-allowed"
@@ -260,7 +263,7 @@ These are just a few examples of plots that can be created using statistical dat
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="mr-2"
+                          className="mr-1 sm:mr-2"
                           disabled={isUploading}
                         >
                           {isUploading ? (
@@ -272,7 +275,7 @@ These are just a few examples of plots that can be created using statistical dat
                         <button
                           type="submit"
                           className={cn(
-                            "bg-orange-600 h-9 w-9 rounded-full flex justify-center items-center",
+                            "bg-orange-600 h-8 w-8 sm:h-9 sm:w-9 rounded-full flex justify-center items-center",
                             !isInitialUploadDone &&
                               !attachment &&
                               "cursor-not-allowed opacity-70"
@@ -316,7 +319,7 @@ These are just a few examples of plots that can be created using statistical dat
             </div>
             <Toaster />
           </TabPanel>
-          <TabPanel className="h-full ">
+          <TabPanel className="h-full">
             <GenerateCards />
           </TabPanel>
         </TabPanels>

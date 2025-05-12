@@ -100,11 +100,11 @@ export const GenerateCards = () => {
 
   return (
     <div className="flex-1 h-full p-6">
-      <div className="flex items-center justify-end mb-4 px-12">
+      <div className="flex items-center justify-end mb-4 ">
         {/* Headless UI Dropdown */}
-        <div className="w-40">
+        <div className="w-40 ">
           <Listbox value={questionCount} onChange={setQuestionCount}>
-            <div className="relative">
+            <div className="relative ">
               <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white border border-gray-300 py-2 pl-4 pr-10 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <span className="block truncate">
                   {
