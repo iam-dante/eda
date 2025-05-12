@@ -77,7 +77,7 @@ export default function Chat({ chatId }: { chatId: string }) {
         setDocument(response.data.document);
         toast({
           className: cn(
-            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-green-700 text-white"
+            "top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-orange-700 text-white"
           ),
           title: "File uploaded",
           description: response.data.message,

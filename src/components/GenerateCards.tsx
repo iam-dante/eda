@@ -76,7 +76,7 @@ export const GenerateCards = () => {
       toast({
         title: "Success",
         description: "Questions generated successfully",
-        className: cn("bg-green-500 text-white"),
+        className: cn("bg-orange-500 text-white"),
       });
     } catch (error) {
       console.error("Error:", error);
