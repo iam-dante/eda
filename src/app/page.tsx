@@ -74,8 +74,7 @@ export default function Home() {
 
           {/* Footer */}
           <footer className="absolute text-center text-gray-500 mt-12 bottom-7">
-            <p>&copy; {new Date().getFullYear()} 
-              Eda. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Eda. All rights reserved.</p>
           </footer>
         </div>
       </div>
